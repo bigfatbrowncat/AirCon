@@ -1,7 +1,6 @@
 package il.aircon.model;
 
 import il.aircon.controller.ArgumentCantBeNull;
-import il.aircon.controller.IncorrectValueException;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -51,7 +50,7 @@ public class Order
 	private Boolean pumpNeeded;							//				необходимость установки дренажой помпы
 
 	// Автоматические поля (рассчитываются системой, пользовательский ввод невозможен)
-	private BigDecimal fullCost;							//				стоимость всех работ по заказу
+	private BigDecimal fullCost;						//				стоимость всех работ по заказу
 	
 	public Order()
 	{
@@ -74,25 +73,30 @@ public class Order
 		if (state == StateType.STATE_COMPLETE || state == StateType.STATE_CANCELLED)
 			throw new FieldIsUnchangeable("targetAddress");
 		this.targetAddress = targetAddress;
+		this.lastModified = new Date();
 	}
 	
 	public String getCustomerName() {
 		return customerName;
 	}
-	public void setCustomerName(String customerName) throws FieldIsUnchangeable {
+	public void setCustomerName(String customerName) throws FieldIsUnchangeable, IncorrectValueException {
 		if (state == StateType.STATE_COMPLETE || state == StateType.STATE_CANCELLED)
 			throw new FieldIsUnchangeable("customerName");
+		if (customerName.length() > 255) throw new IncorrectValueException("customerName");
 		this.customerName = customerName;
+		this.lastModified = new Date();
 	}
 	
 	public String getProductManufacturerAndModel() {
 		return productManufacturerAndModel;
 	}
 	public void setProductManufacturerAndModel(
-			String productManufacturerAndModel) throws FieldIsUnchangeable {
+			String productManufacturerAndModel) throws FieldIsUnchangeable, IncorrectValueException {
 		if (state == StateType.STATE_COMPLETE || state == StateType.STATE_CANCELLED)
 			throw new FieldIsUnchangeable("productManufacturerAndModel");
+		if (productManufacturerAndModel.length() > 255) throw new IncorrectValueException("productManufacturerAndModel");
 		this.productManufacturerAndModel = productManufacturerAndModel;
+		this.lastModified = new Date();
 	}
 	
 	public Float getPipeLineLength() {
@@ -103,6 +107,7 @@ public class Order
 			throw new FieldIsUnchangeable("pipeLineLength");
 		if (pipeLineLength <= 0) throw new IncorrectValueException("pipeLineLength should be positive");
 		this.pipeLineLength = pipeLineLength;
+		this.lastModified = new Date();
 	}
 	
 	public Float getAdditionalCoolantAmount() {
@@ -113,23 +118,26 @@ public class Order
 			throw new FieldIsUnchangeable("additionalCoolantAmount");
 		if (additionalCoolantAmount < 0) throw new IncorrectValueException("additionalCoolantAmount can not be negative");
 		this.additionalCoolantAmount = additionalCoolantAmount;
+		this.lastModified = new Date();
 	}
 	
 	public Boolean getPumpNeeded() {
 		return pumpNeeded;
 	}
-	public void setPumpNeeded(Boolean pumpNeeded) throws FieldIsUnchangeable {
+	public void setPumpNeeded(Boolean pumpNeeded) throws FieldIsUnchangeable, ArgumentCantBeNull {
 		if (state == StateType.STATE_NEW || state == StateType.STATE_COMPLETE || state == StateType.STATE_CANCELLED)
 			throw new FieldIsUnchangeable("pumpNeeded");
+		if (pumpNeeded == null) throw new ArgumentCantBeNull("pumpNeeded");
 		this.pumpNeeded = pumpNeeded;
 	}
 	
 	public BigDecimal getFullCost() {
 		return fullCost;
 	}
-	public void setFullCost(BigDecimal fullCost) throws IncorrectValueException, FieldIsUnchangeable {
+	public void setFullCost(BigDecimal fullCost) throws IncorrectValueException, FieldIsUnchangeable, ArgumentCantBeNull {
 		if (state == StateType.STATE_NEW || state == StateType.STATE_COMPLETE || state == StateType.STATE_CANCELLED)
 			throw new FieldIsUnchangeable("fullCost");
+		if (fullCost == null) throw new ArgumentCantBeNull("fullCost");
 		if (fullCost.compareTo(new BigDecimal(0)) < 0) throw new IncorrectValueException("fullCost can not be negative");
 		this.fullCost = fullCost;
 	}
@@ -138,7 +146,8 @@ public class Order
 		return state;
 	}
 	
-	public void setState(StateType state) throws IncorrectOrderStateChange {
+	public void setState(StateType state) throws IncorrectOrderStateChange, ArgumentCantBeNull {
+		if (state == null) throw new ArgumentCantBeNull("state");
 		if (this.state == state) return;
 		
 		switch (this.state)
@@ -157,10 +166,13 @@ public class Order
 		}
 		
 		this.state = state;
+		this.lastModified = new Date();
 	}
 	public Long getUid() {
 		return uid;
 	}
+	
+	// TODO: Разобраться!
 	public void setUid(Long uid) {
 		this.uid = uid;
 	}

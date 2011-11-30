@@ -7,19 +7,19 @@
    <generator class="native"/>
   </id>
   <property column="created" generated="never" lazy="false"
-   name="created" type="timestamp"/>
+   name="created" type="timestamp" access="field"/>
   <property column="lastModified" generated="never" lazy="false"
-   name="lastModified" type="timestamp"/>
+   name="lastModified" type="timestamp" access="field"/>
   <property column="targetAddress" generated="never" lazy="false"
-   length="255" name="targetAddress" type="string"/>
+   length="255" name="targetAddress" type="string" access="field"/>
   <property column="customerName" generated="never" lazy="false"
-   length="255" name="customerName" type="string"/>
+   length="255" name="customerName" type="string" access="field"/>
   <property column="productManufacturerAndModel" generated="never"
-   lazy="false" length="255" name="productManufacturerAndModel" type="string"/>
-  <property generated="never" lazy="false" name="pipeLineLength"/>
-  <property generated="never" lazy="false" name="additionalCoolantAmount"/>
-  <property generated="never" lazy="false" name="pumpNeeded"/>
-  <property generated="never" lazy="false" name="fullCost" type="currency"/>
-  <property generated="never" lazy="false" name="state"/>
+   lazy="false" length="255" name="productManufacturerAndModel" type="string" access="field"/>
+  <property generated="never" lazy="false" name="pipeLineLength" access="field"/>
+  <property generated="never" lazy="false" name="additionalCoolantAmount" access="field"/>
+  <property generated="never" lazy="false" name="pumpNeeded" access="field"/>
+  <property generated="never" lazy="false" name="fullCost" type="currency" access="field"/>
+  <property generated="never" lazy="false" name="state" access="field"/>
  </class>
 </hibernate-mapping>

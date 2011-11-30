@@ -2,7 +2,9 @@ package il.aircon.controller;
 
 import java.util.Date;
 
+import il.aircon.model.FieldIsUnchangeable;
 import il.aircon.model.IncorrectOrderStateChange;
+import il.aircon.model.IncorrectValueException;
 import il.aircon.model.Order;
 import il.aircon.model.Order.StateType;
 
@@ -32,23 +34,17 @@ public final class OrdersManager
 	 * @param targetAddress Адрес, по которому предполагается произвести монтаж
 	 * @throws InvalidInputException В влучае неверных входных данных
 	 * @throws ArgumentCantBeNull В случае если один или несколько переданных параметров имеют значение null
+	 * @throws FieldIsUnchangeable В случае если данное поле не может быть изменено при данном состоянии заказа
+	 * @throws IncorrectValueException В случае некорректного значения
 	 */
 	private static void setBasicOrderFields(
 			Order order,
 			String productManufacturerAndModel,
 			String customerName, 
-			String targetAddress) throws InvalidInputException, ArgumentCantBeNull
+			String targetAddress) throws InvalidInputException, ArgumentCantBeNull, FieldIsUnchangeable, IncorrectValueException
 	{
-		if (productManufacturerAndModel == null) throw new ArgumentCantBeNull("productManufacturerAndModel");
-		if (productManufacturerAndModel.length() > 255) throw new InvalidInputException("productManufacturerAndModel");
 		order.setProductManufacturerAndModel(productManufacturerAndModel);
-		
-		if (customerName == null) throw new ArgumentCantBeNull("customerName");
-		if (customerName.length() > 255) throw new InvalidInputException("customerName");
 		order.setCustomerName(customerName);
-		
-		if (targetAddress == null) throw new ArgumentCantBeNull("targetAddress");
-		if (targetAddress.length() > 255) throw new InvalidInputException("targetAddress");
 		order.setTargetAddress(targetAddress);		
 	}
 
@@ -60,14 +56,16 @@ public final class OrdersManager
 	 * @param pipeLineLength_s Строка, содержащая длину трубопроводной магистрали между внутренним и внешним блоками в метрах
 	 * @param additionalCoolantAmount_s Строка, содержащая количество дозаправленного хдадагента в килограммах
 	 * @param pumpNeeded Необходимость установки дренажой помпы
-	 * @throws InvalidInputException
-	 * @throws ArgumentCantBeNull
+	 * @throws InvalidInputException В влучае неверных входных данных
+	 * @throws ArgumentCantBeNull В случае если один или несколько переданных параметров имеют значение null
+	 * @throws FieldIsUnchangeable В случае если данное поле не может быть изменено при данном состоянии заказа
+	 * @throws IncorrectValueException В случае некорректного значения
 	 */
 	private static void setAfterInspectionOrderFields(
 			Order order,
 			String pipeLineLength_s,
 			String additionalCoolantAmount_s,
-			Boolean pumpNeeded) throws InvalidInputException, ArgumentCantBeNull
+			Boolean pumpNeeded) throws InvalidInputException, ArgumentCantBeNull, IncorrectValueException, FieldIsUnchangeable
 	{
 		if (pipeLineLength_s == null) throw new ArgumentCantBeNull("pipeLineLength");
 		try
@@ -91,7 +89,6 @@ public final class OrdersManager
 			throw new InvalidInputException("additionalCoolantAmount");
 		}
 		
-		if (pumpNeeded == null) throw new ArgumentCantBeNull("pumpNeeded");
 		order.setPumpNeeded(pumpNeeded);
 		
 		calculateFullCost(order);		
@@ -113,23 +110,19 @@ public final class OrdersManager
 	 * @param targetAddress Адрес, по которому предполагается произвести монтаж
 	 * @return Возвращается объект {@link il.aircon.model.Order}
 	 * @throws InvalidInputException В влучае неверных входных данных
-	 * @throws ArgumentCantBeNull В случае если один или несколько требуемых параметров имеют значение null
+	 * @throws ArgumentCantBeNull В случае если один или несколько переданных параметров имеют значение null
+	 * @throws FieldIsUnchangeable В случае если данное поле не может быть изменено при данном состоянии заказа
+	 * @throws IncorrectValueException В случае некорректного значения
+	 * @throws IncorrectOrderStateChange В случае если сменить состояние указанным образом невозможно
 	 */
 	public static Order CreateNewOrder(
 			String productManufacturerAndModel,
 			String customerName, 
-			String targetAddress) throws InvalidInputException, ArgumentCantBeNull
+			String targetAddress) throws InvalidInputException, ArgumentCantBeNull, FieldIsUnchangeable, IncorrectOrderStateChange, IncorrectValueException
 	{
 		Order res = new Order();
 		res.setState(StateType.STATE_NEW);
-		
-		Date now = new Date();
-		res.setCreated(now);
-		
 		setBasicOrderFields(res, productManufacturerAndModel, customerName, targetAddress);
-		
-		res.setLastModified(now);
-		
 		return res;
 	}
 	
@@ -147,6 +140,9 @@ public final class OrdersManager
 	 * @return Возвращается объект {@link il.aircon.model.Order}
 	 * @throws InvalidInputException В влучае неверных входных данных
 	 * @throws ArgumentCantBeNull В случае если один или несколько требуемых параметров имеют значение null
+	 * @throws FieldIsUnchangeable В случае если данное поле не может быть изменено при данном состоянии заказа
+	 * @throws IncorrectValueException В случае неверного ввода данных
+	 * @throws IncorrectOrderStateChange В случае если сменить состояние указанным образом невозможно
 	 */
 	public static Order CreateInspectionCompleteOrder(
 			String productManufacturerAndModel,
@@ -154,15 +150,11 @@ public final class OrdersManager
 			String targetAddress, 
 			String pipeLineLength_s,
 			String additionalCoolantAmount_s,
-			Boolean pumpNeeded) throws InvalidInputException, ArgumentCantBeNull
+			Boolean pumpNeeded) throws InvalidInputException, ArgumentCantBeNull, IncorrectOrderStateChange, FieldIsUnchangeable, IncorrectValueException
 	{
 		Order res = new Order();
 		res.setState(StateType.STATE_AFTER_INSPECTION);
 		
-		Date now = new Date();
-		res.setCreated(now);
-		res.setLastModified(now);
-
 		setBasicOrderFields(res, productManufacturerAndModel, customerName, targetAddress);
 		setAfterInspectionOrderFields(res, pipeLineLength_s, additionalCoolantAmount_s, pumpNeeded);
 
@@ -179,8 +171,10 @@ public final class OrdersManager
 	 * @param pumpNeeded Необходимость установки дренажой помпы
 	 * @throws ArgumentCantBeNull В случае если один или несколько требуемых параметров имеют значение null
 	 * @throws ArgumentShouldBeNull В случае если указаны неиспользуемые параметры
-	 * @throws IncorrectOrderStateChange В случае если сменить состояние указанным образом невозможно
 	 * @throws InvalidInputException В случае неверных входных данных
+	 * @throws FieldIsUnchangeable В случае если данное поле не может быть изменено при данном состоянии заказа
+	 * @throws IncorrectValueException В случае некорректного значения
+	 * @throws IncorrectOrderStateChange В случае если сменить состояние указанным образом невозможно
 	 */
 	public static void ModifyOrder(
 			Order order,
@@ -190,141 +184,16 @@ public final class OrdersManager
 			String targetAddress, 
 			String pipeLineLength_s,
 			String additionalCoolantAmount_s,
-			Boolean pumpNeeded) throws ArgumentCantBeNull, ArgumentShouldBeNull, IncorrectOrderStateChange, InvalidInputException
+			Boolean pumpNeeded) throws ArgumentCantBeNull, ArgumentShouldBeNull, IncorrectOrderStateChange, InvalidInputException, FieldIsUnchangeable, IncorrectValueException
 	{
 		if (order == null) throw new ArgumentCantBeNull("order");
-
-		Date now = new Date();
+		order.setState(stateType);
 		
-		if (order.getState() == stateType)
-		{
-			switch (order.getState())
-			{
-			case STATE_CANCELLED:
-			case STATE_COMPLETE:
-				// Любые изменения запрещены
-				if (productManufacturerAndModel != null) throw new ArgumentShouldBeNull("productManufacturerAndModel", "order is complete");
-				if (customerName != null) throw new ArgumentShouldBeNull("customerName", "order is complete");
-				if (targetAddress != null) throw new ArgumentShouldBeNull("targetAddress", "order is complete");
-				if (pipeLineLength_s != null) throw new ArgumentShouldBeNull("pipeLineLength", "order is complete");
-				if (additionalCoolantAmount_s != null) throw new ArgumentShouldBeNull("additionalCoolantAmount", "order is complete");
-				if (pumpNeeded != null) throw new ArgumentShouldBeNull("pumpNeeded", "order is complete");
-				break;
-	
-			case STATE_NEW:
-				// Разрешена только правка основных полей
-
-				if (pipeLineLength_s != null) throw new ArgumentShouldBeNull("pipeLineLength", "inspection isn't complete");
-				if (additionalCoolantAmount_s != null) throw new ArgumentShouldBeNull("additionalCoolantAmount", "inspection isn't complete");
-				if (pumpNeeded != null) throw new ArgumentShouldBeNull("pumpNeeded", "inspection isn't complete");
-
-				setBasicOrderFields(order, productManufacturerAndModel, customerName, targetAddress);
-				order.setLastModified(now);
-				break;
-
-			case STATE_AFTER_INSPECTION:
-				// Разрешена правка любых полей 
-
-				setBasicOrderFields(order, productManufacturerAndModel, customerName, targetAddress);
-				setAfterInspectionOrderFields(order, pipeLineLength_s, additionalCoolantAmount_s, pumpNeeded);
-				order.setLastModified(now);
-				break;
-			}				
-		}
-		else
-		{
-			if (order.getState() == StateType.STATE_NEW)
-			{
-				switch (stateType)
-				{
-				case STATE_CANCELLED:
-					// При отмене заказа любая правка невозможна
-					if (productManufacturerAndModel != null) throw new ArgumentShouldBeNull("productManufacturerAndModel", "order is cancelled");
-					if (customerName != null) throw new ArgumentShouldBeNull("customerName", "order is cancelled");
-					if (targetAddress != null) throw new ArgumentShouldBeNull("targetAddress", "order is cancelled");
-					if (pipeLineLength_s != null) throw new ArgumentShouldBeNull("pipeLineLength", "order is cancelled");
-					if (additionalCoolantAmount_s != null) throw new ArgumentShouldBeNull("additionalCoolantAmount", "order is cancelled");
-					if (pumpNeeded != null) throw new ArgumentShouldBeNull("pumpNeeded", "order is cancelled");
-					break;
-
-				case STATE_COMPLETE:
-					// Заказ не может быть переведен из состояния new сразу в complete
-					throw new IncorrectOrderStateChange(order.getState(), stateType);
-
-				case STATE_AFTER_INSPECTION:
-					// При переводе из new в after inspection возможна любая правка полей заказа
-					order.setLastModified(now);
-
-					setBasicOrderFields(order, productManufacturerAndModel, customerName, targetAddress);
-					setAfterInspectionOrderFields(order, pipeLineLength_s, additionalCoolantAmount_s, pumpNeeded);
-					break;
-				}
-			}
-			else if (order.getState() == StateType.STATE_AFTER_INSPECTION)
-			{
-				switch (stateType)
-				{
-				case STATE_CANCELLED:
-					// При отмене заказа любая правка невозможна
-					if (productManufacturerAndModel != null) throw new ArgumentShouldBeNull("productManufacturerAndModel", "order is cancelled");
-					if (customerName != null) throw new ArgumentShouldBeNull("customerName", "order is cancelled");
-					if (targetAddress != null) throw new ArgumentShouldBeNull("targetAddress", "order is cancelled");
-					if (pipeLineLength_s != null) throw new ArgumentShouldBeNull("pipeLineLength", "order is cancelled");
-					if (additionalCoolantAmount_s != null) throw new ArgumentShouldBeNull("additionalCoolantAmount", "order is cancelled");
-					if (pumpNeeded != null) throw new ArgumentShouldBeNull("pumpNeeded", "order is cancelled");
-					break;
-				
-				case STATE_NEW:
-					// Заказ, для которого проведена инспекция, не может быть снова объявлен "новым".
-					throw new IncorrectOrderStateChange(order.getState(), stateType);
-				
-				case STATE_COMPLETE:
-					// Разрешена правка любых полей 
-					setBasicOrderFields(order, productManufacturerAndModel, customerName, targetAddress);
-					setAfterInspectionOrderFields(order, pipeLineLength_s, additionalCoolantAmount_s, pumpNeeded);
-					order.setLastModified(now);
-					break;
-
-				}
-			}
-			else if (order.getState() == StateType.STATE_CANCELLED)
-			{
-				switch (stateType)
-				{
-				case STATE_NEW:
-					// Разрешена только правка основных полей
-					if (pipeLineLength_s != null) throw new ArgumentShouldBeNull("pipeLineLength", "inspection isn't complete");
-					if (additionalCoolantAmount_s != null) throw new ArgumentShouldBeNull("additionalCoolantAmount", "inspection isn't complete");
-					if (pumpNeeded != null) throw new ArgumentShouldBeNull("pumpNeeded", "inspection isn't complete");
-
-					setBasicOrderFields(order, productManufacturerAndModel, customerName, targetAddress);
-					order.setLastModified(now);
-					break;
-
-				case STATE_AFTER_INSPECTION:
-					// Разрешена правка любых полей 
-					setBasicOrderFields(order, productManufacturerAndModel, customerName, targetAddress);
-					setAfterInspectionOrderFields(order, pipeLineLength_s, additionalCoolantAmount_s, pumpNeeded);
-					order.setLastModified(now);
-					break;
-				case STATE_COMPLETE:
-					// Отмененный заказ не может быть сразу объявлен завершенным успешно
-					throw new IncorrectOrderStateChange(order.getState(), stateType);
-				}				
-			}
-			else if (order.getState() == StateType.STATE_COMPLETE)
-			{
-				// Завершенный заказ нельзя править ни при каком условии
-				if (productManufacturerAndModel != null) throw new ArgumentShouldBeNull("productManufacturerAndModel", "order is complete");
-				if (customerName != null) throw new ArgumentShouldBeNull("customerName", "order is complete");
-				if (targetAddress != null) throw new ArgumentShouldBeNull("targetAddress", "order is complete");
-				if (pipeLineLength_s != null) throw new ArgumentShouldBeNull("pipeLineLength", "order is complete");
-				if (additionalCoolantAmount_s != null) throw new ArgumentShouldBeNull("additionalCoolantAmount", "order is complete");
-				if (pumpNeeded != null) throw new ArgumentShouldBeNull("pumpNeeded", "order is complete");
-			}			
-			order.setState(stateType);
+		if (stateType == StateType.STATE_NEW || stateType == StateType.STATE_AFTER_INSPECTION)
+			setBasicOrderFields(order, productManufacturerAndModel, customerName, targetAddress);
 		
-		}
+		if (stateType == StateType.STATE_AFTER_INSPECTION)
+			setAfterInspectionOrderFields(order, pipeLineLength_s, additionalCoolantAmount_s, pumpNeeded);
 			
 	}
 

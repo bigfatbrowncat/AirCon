@@ -3,7 +3,10 @@ package il.aircon.view;
 import il.aircon.controller.ArgumentCantBeNull;
 import il.aircon.controller.InvalidInputException;
 import il.aircon.controller.OrdersManager;
+import il.aircon.model.FieldIsUnchangeable;
 import il.aircon.model.HibernateUtil;
+import il.aircon.model.IncorrectOrderStateChange;
+import il.aircon.model.IncorrectValueException;
 import il.aircon.model.Order;
 import il.aircon.model.Order.StateType;
 
@@ -200,6 +203,15 @@ public final class CreateOrder extends HttpServlet {
 				if (iie.getFieldName().equals("pipeLineLength")) pipeLineLength_incorrect = true;
 				if (iie.getFieldName().equals("additionalCoolantAmount")) additionalCoolantAmount_incorrect = true;
 			} catch (ArgumentCantBeNull e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (FieldIsUnchangeable e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IncorrectOrderStateChange e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IncorrectValueException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

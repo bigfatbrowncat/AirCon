@@ -1,4 +1,4 @@
-package il.aircon.controller;
+package il.aircon.model;
 
 public class IncorrectValueException extends Exception {
 	public IncorrectValueException(String message)
