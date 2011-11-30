@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+                                   "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="il.aircon.model">
+ <class name="Order" table="orders">
+  <id column="uid" name="uid">
+   <generator class="native"/>
+  </id>
+  <property column="created" generated="never" lazy="false"
+   name="created" type="timestamp"/>
+  <property column="lastModified" generated="never" lazy="false"
+   name="lastModified" type="timestamp"/>
+  <property column="targetAddress" generated="never" lazy="false"
+   length="255" name="targetAddress" type="string"/>
+  <property column="customerName" generated="never" lazy="false"
+   length="255" name="customerName" type="string"/>
+  <property column="productManufacturerAndModel" generated="never"
+   lazy="false" length="255" name="productManufacturerAndModel" type="string"/>
+  <property generated="never" lazy="false" name="pipeLineLength"/>
+  <property generated="never" lazy="false" name="additionalCoolantAmount"/>
+  <property generated="never" lazy="false" name="pumpNeeded"/>
+  <property generated="never" lazy="false" name="fullCost" type="currency"/>
+  <property generated="never" lazy="false" name="state"/>
+ </class>
+</hibernate-mapping>
