@@ -37,7 +37,7 @@ public class Order
 	private Date created;								//				дата создания заявки
 	private Date lastModified;							//				дата последнего изменения заявки
 	
-	private StateType state;							//				статус выполнения заявки
+	private StateType state = StateType.STATE_NEW;		//				статус выполнения заявки
 
 	// Основные поля (могут быть заполнены в состоянии new и after inspection)
 	private String productManufacturerAndModel;			// 				данные о модели устанавливаемой сплит-системы
@@ -79,9 +79,10 @@ public class Order
 	public String getCustomerName() {
 		return customerName;
 	}
-	public void setCustomerName(String customerName) throws FieldIsUnchangeable, IncorrectValueException {
+	public void setCustomerName(String customerName) throws FieldIsUnchangeable, IncorrectValueException, ArgumentCantBeNull {
 		if (state == StateType.STATE_COMPLETE || state == StateType.STATE_CANCELLED)
 			throw new FieldIsUnchangeable("customerName");
+		if (customerName == null) throw new ArgumentCantBeNull("customerName");
 		if (customerName.length() > 255) throw new IncorrectValueException("customerName");
 		this.customerName = customerName;
 		this.lastModified = new Date();
@@ -91,9 +92,10 @@ public class Order
 		return productManufacturerAndModel;
 	}
 	public void setProductManufacturerAndModel(
-			String productManufacturerAndModel) throws FieldIsUnchangeable, IncorrectValueException {
+			String productManufacturerAndModel) throws FieldIsUnchangeable, IncorrectValueException, ArgumentCantBeNull {
 		if (state == StateType.STATE_COMPLETE || state == StateType.STATE_CANCELLED)
 			throw new FieldIsUnchangeable("productManufacturerAndModel");
+		if (productManufacturerAndModel == null) throw new ArgumentCantBeNull("productManufacturerAndModel");
 		if (productManufacturerAndModel.length() > 255) throw new IncorrectValueException("productManufacturerAndModel");
 		this.productManufacturerAndModel = productManufacturerAndModel;
 		this.lastModified = new Date();
@@ -102,10 +104,11 @@ public class Order
 	public Float getPipeLineLength() {
 		return pipeLineLength;
 	}
-	public void setPipeLineLength(Float pipeLineLength) throws IncorrectValueException, FieldIsUnchangeable {
+	public void setPipeLineLength(Float pipeLineLength) throws IncorrectValueException, FieldIsUnchangeable, ArgumentCantBeNull {
 		if (state == StateType.STATE_NEW || state == StateType.STATE_COMPLETE || state == StateType.STATE_CANCELLED)
 			throw new FieldIsUnchangeable("pipeLineLength");
-		if (pipeLineLength <= 0) throw new IncorrectValueException("pipeLineLength should be positive");
+		if (pipeLineLength == null) throw new ArgumentCantBeNull("pipeLineLength");
+		if (pipeLineLength <= 0) throw new IncorrectValueException("pipeLineLength");
 		this.pipeLineLength = pipeLineLength;
 		this.lastModified = new Date();
 	}
@@ -113,10 +116,11 @@ public class Order
 	public Float getAdditionalCoolantAmount() {
 		return additionalCoolantAmount;
 	}
-	public void setAdditionalCoolantAmount(Float additionalCoolantAmount) throws IncorrectValueException, FieldIsUnchangeable {
+	public void setAdditionalCoolantAmount(Float additionalCoolantAmount) throws IncorrectValueException, FieldIsUnchangeable, ArgumentCantBeNull {
 		if (state == StateType.STATE_NEW || state == StateType.STATE_COMPLETE || state == StateType.STATE_CANCELLED)
 			throw new FieldIsUnchangeable("additionalCoolantAmount");
-		if (additionalCoolantAmount < 0) throw new IncorrectValueException("additionalCoolantAmount can not be negative");
+		if (additionalCoolantAmount == null) throw new ArgumentCantBeNull("additionalCoolantAmount");
+		if (additionalCoolantAmount < 0) throw new IncorrectValueException("additionalCoolantAmount");
 		this.additionalCoolantAmount = additionalCoolantAmount;
 		this.lastModified = new Date();
 	}
@@ -170,10 +174,5 @@ public class Order
 	}
 	public Long getUid() {
 		return uid;
-	}
-	
-	// TODO: Разобраться!
-	public void setUid(Long uid) {
-		this.uid = uid;
 	}
 }

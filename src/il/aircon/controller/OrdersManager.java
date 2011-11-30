@@ -170,7 +170,6 @@ public final class OrdersManager
 	 * @param additionalCoolantAmount_s Строка, содержащая количество дозаправленного хдадагента в килограммах
 	 * @param pumpNeeded Необходимость установки дренажой помпы
 	 * @throws ArgumentCantBeNull В случае если один или несколько требуемых параметров имеют значение null
-	 * @throws ArgumentShouldBeNull В случае если указаны неиспользуемые параметры
 	 * @throws InvalidInputException В случае неверных входных данных
 	 * @throws FieldIsUnchangeable В случае если данное поле не может быть изменено при данном состоянии заказа
 	 * @throws IncorrectValueException В случае некорректного значения
@@ -184,7 +183,7 @@ public final class OrdersManager
 			String targetAddress, 
 			String pipeLineLength_s,
 			String additionalCoolantAmount_s,
-			Boolean pumpNeeded) throws ArgumentCantBeNull, ArgumentShouldBeNull, IncorrectOrderStateChange, InvalidInputException, FieldIsUnchangeable, IncorrectValueException
+			Boolean pumpNeeded) throws ArgumentCantBeNull, IncorrectOrderStateChange, InvalidInputException, FieldIsUnchangeable, IncorrectValueException
 	{
 		if (order == null) throw new ArgumentCantBeNull("order");
 		order.setState(stateType);

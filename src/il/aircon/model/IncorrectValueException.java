@@ -1,8 +1,16 @@
 package il.aircon.model;
 
 public class IncorrectValueException extends Exception {
-	public IncorrectValueException(String message)
+	private String fieldName;
+	public String getFieldName()
 	{
-		super(message);		
+		return fieldName;
+	}
+	public IncorrectValueException(String fieldName)
+	{
+		super("Incorrect field " + fieldName + " value");
+		this.fieldName = fieldName;
+		
+		
 	}
 }

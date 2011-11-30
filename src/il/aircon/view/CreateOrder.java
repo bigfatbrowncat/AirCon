@@ -31,7 +31,12 @@ import org.hibernate.SessionFactory;
 public final class CreateOrder extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private Session session;
-       
+      
+	private static String pipeLineLength_INCORRECT_MESSAGE = "Значение длины трубопроводной магистрали между внутренним и внешним блоками должно быть положительным числом. "
+			+ "Допускаются десятичные дроби.";
+	private static String additionalCoolantAmount_INCORRECT_MESSAGE = "Количество дозаправленного хладагента должно быть положительным числом или нулём. "
+			+ "Допускаются десятичные дроби.";
+	
     /**
      * @see HttpServlet#HttpServlet()
      */
@@ -52,10 +57,12 @@ public final class CreateOrder extends HttpServlet {
     		Boolean pumpNeeded,
     		
     		boolean pipeLineLength_incorrect,
-    		boolean additionalCoolantAmount_incorrect) throws UnsupportedOrderState
+    		boolean additionalCoolantAmount_incorrect,
+    		
+    		String incorrect_input_message) throws UnsupportedOrderState
     {
 		pw.printf("<html><head>");
-		pw.printf("<title>Создать заказ</title>\n");
+		pw.printf("<title>Создание заказа</title>\n");
 
 		pw.printf("<script language=\"javascript\">\n");
 		pw.printf("function check_additional()\n");
@@ -68,6 +75,7 @@ public final class CreateOrder extends HttpServlet {
 		pw.printf("</script>\n");
 		pw.printf("<style>\n");
 		pw.printf("  input.incorrect { background: #ffaaaa }\n");
+		pw.printf("  .incorrect_input_msg { color: #880000 }\n");
 		pw.printf("</style>\n");
 		pw.printf("</head><body>\n");
 		pw.printf("<form method=\"post\">\n");
@@ -76,22 +84,22 @@ public final class CreateOrder extends HttpServlet {
 		pw.printf("<tr>\n");
 		pw.printf("<td style=\"width: 300pt\">Состояние заказа:</td>");
 		
-		String state_value;
+		boolean new_selected = false, after_insp_selected = false;
 		if (state == StateType.STATE_NEW)
 		{
-			state_value = "new";
+			new_selected = true;
 		}
 		else if (state == StateType.STATE_AFTER_INSPECTION)
 		{
-			state_value = "after_insp";
+			after_insp_selected = true;
 		}
 		else
 			throw new UnsupportedOrderState(state);
 			
 		
 		pw.printf("<td><select id=\"state\" name=\"state\" onchange=\"check_additional();\" style=\"width: 250pt\">");
-		pw.printf("<option value=\"new\">Новый</option>");
-		pw.printf("<option value=\"after_insp\" selected>Осмотр произведен</option>");
+		pw.printf("<option value=\"new\" %1$s>Новый</option>", new_selected ? "selected" : "");
+		pw.printf("<option value=\"after_insp\" %1$s>Осмотр произведен</option>", after_insp_selected ? "selected" : "");
 		pw.printf("</select></td>");
 		pw.printf("</tr>\n");
 		
@@ -108,13 +116,13 @@ public final class CreateOrder extends HttpServlet {
 		pw.printf("</tr>\n");
 
 		pw.printf("<tr id=\"pipeLineLength_row\" style=\"visibility: hidden\">\n");
-		pw.printf("<td>Длина магистрали между блоками:</td> <td><input %2$s style=\"width: 250pt\" name=\"pipeLineLength\" id=\"pipeLineLength\" type=\"text\" value=\"%1$s\" /></td>", 
+		pw.printf("<td>Длина магистрали между блоками:</td> <td><input %2$s style=\"width: 250pt\" name=\"pipeLineLength\" id=\"pipeLineLength\" type=\"text\" value=\"%1$s\" />, <b>м</b></td>", 
 				pipeLineLength, 
 				pipeLineLength_incorrect ? "class=\"incorrect\"" : "");
 		pw.printf("</tr>\n");
 
 		pw.printf("<tr id=\"additionalCoolantAmount_row\" style=\"visibility: hidden\">\n");
-		pw.printf("<td>Количество дозаправленного хладагента:</td> <td><input %2$s style=\"width: 250pt\" name=\"additionalCoolantAmount\" id=\"additionalCoolantAmount\" type=\"text\" value=\"%1$s\" /></td>", 
+		pw.printf("<td>Количество дозаправленного хладагента:</td> <td><input %2$s style=\"width: 250pt\" name=\"additionalCoolantAmount\" id=\"additionalCoolantAmount\" type=\"text\" value=\"%1$s\" />, <b>кг</b></td>", 
 				additionalCoolantAmount, 
 				additionalCoolantAmount_incorrect ? "class=\"incorrect\"" : "");
 		pw.printf("</tr>\n");
@@ -123,8 +131,14 @@ public final class CreateOrder extends HttpServlet {
 		pw.printf("<td>Необходима установка дренажной помпы:</td><td><input style=\"width: 250pt\" name=\"pumpNeeded\" id=\"pumpNeeded\" type=\"checkbox\" %1$s></td>", (pumpNeeded ? "checked" : ""));
 		pw.printf("</tr>\n");
 		pw.printf("</table>\n");
-		pw.println("<input style=\"padding: 2px; margin: 2px; margin-top: 5px; \"type=\"submit\" value=\"Принять заказ\" />");		
 
+		if (incorrect_input_message != null && !incorrect_input_message.equals(""))
+		{
+			pw.printf("<p class=\"incorrect_input_msg\"><b>Неверный ввод: </b>%1$s</p>\n", incorrect_input_message);		
+		}
+		
+		pw.println("<input style=\"padding: 2px; margin: 2px; margin-top: 5px; \"type=\"submit\" value=\"Принять заказ\" />");		
+		
 		pw.printf("</form>");
 		pw.printf("</body>");
 		pw.printf("<script language=\"javascript\">\n");
@@ -133,6 +147,18 @@ public final class CreateOrder extends HttpServlet {
 		pw.printf("</html>");    	
     }
     
+	private void printSuccess(PrintWriter pw) {
+		pw.printf("<html><head>");
+		pw.printf("<title>Создание заказа</title>\n");
+		pw.printf("<style>\n");
+		pw.printf("  .success { color: #008800; font-size: 200%%; }\n");
+		pw.printf("</style>\n");
+		pw.printf("</head><body>\n");
+		pw.printf("<p class=\"success\">Заказ принят успешно!</p>");
+		pw.printf("</body>");
+		pw.printf("</html>");    	
+	}    
+
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
@@ -143,8 +169,8 @@ public final class CreateOrder extends HttpServlet {
 
 		PrintWriter pw = response.getWriter();
 		try {
-			printForm(pw, StateType.STATE_AFTER_INSPECTION, 
-					"", "", "", "0", "0", true, false, false);
+			printForm(pw, StateType.STATE_NEW, 
+					"", "", "", "0", "0", true, false, false, null);
 		} catch (UnsupportedOrderState e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -158,7 +184,8 @@ public final class CreateOrder extends HttpServlet {
 		req.setCharacterEncoding("UTF-8");
 		resp.setContentType("text/html; charset=UTF-8");
 		resp.setCharacterEncoding("UTF-8");
-
+		
+		String incorrect_input_message = null; 
 		try
 		{
 			String state = req.getParameter("state");
@@ -196,12 +223,38 @@ public final class CreateOrder extends HttpServlet {
 				{
 					order = OrdersManager.CreateInspectionCompleteOrder(productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded);
 				}
+				else
+				{
+					throw new UnsupportedOrderState(stateType);
+				}
+				
+				session.save(order);
+				
 				
 			}
 			catch (InvalidInputException iie)
 			{
-				if (iie.getFieldName().equals("pipeLineLength")) pipeLineLength_incorrect = true;
-				if (iie.getFieldName().equals("additionalCoolantAmount")) additionalCoolantAmount_incorrect = true;
+				if (iie.getFieldName().equals("pipeLineLength")) 
+				{
+					pipeLineLength_incorrect = true;
+					incorrect_input_message = pipeLineLength_INCORRECT_MESSAGE;
+				}
+				if (iie.getFieldName().equals("additionalCoolantAmount")) 
+				{
+					additionalCoolantAmount_incorrect = true;
+					incorrect_input_message = additionalCoolantAmount_INCORRECT_MESSAGE;
+				}
+			} catch (IncorrectValueException ive) {
+				if (ive.getFieldName().equals("pipeLineLength"))
+				{
+					pipeLineLength_incorrect = true;
+					incorrect_input_message = pipeLineLength_INCORRECT_MESSAGE;
+				}
+				if (ive.getFieldName().equals("additionalCoolantAmount"))
+				{
+					additionalCoolantAmount_incorrect = true;
+					incorrect_input_message = additionalCoolantAmount_INCORRECT_MESSAGE;
+				}
 			} catch (ArgumentCantBeNull e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -211,13 +264,17 @@ public final class CreateOrder extends HttpServlet {
 			} catch (IncorrectOrderStateChange e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (IncorrectValueException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			} 
 			
-			printForm(pw, stateType, productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded, 
-					pipeLineLength_incorrect, additionalCoolantAmount_incorrect);
+			if (incorrect_input_message != null)
+			{
+				printForm(pw, stateType, productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded, 
+						pipeLineLength_incorrect, additionalCoolantAmount_incorrect, incorrect_input_message);
+			}
+			else
+			{
+				printSuccess(pw);
+			}
 		
 		} catch (UnsupportedOrderState e) {
 			// TODO Auto-generated catch block
@@ -225,5 +282,7 @@ public final class CreateOrder extends HttpServlet {
 		}
 		//super.doPost(req, resp);
 	}
+
+
 
 }

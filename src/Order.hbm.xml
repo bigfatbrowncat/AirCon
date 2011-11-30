@@ -3,7 +3,7 @@
                                    "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 <hibernate-mapping package="il.aircon.model">
  <class name="Order" table="orders">
-  <id column="uid" name="uid">
+  <id column="uid" name="uid" access="field">
    <generator class="native"/>
   </id>
   <property column="created" generated="never" lazy="false"
