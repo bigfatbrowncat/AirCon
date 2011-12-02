@@ -1,8 +1,17 @@
 package il.aircon.controller;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 
 import il.aircon.model.FieldIsUnchangeable;
+import il.aircon.model.HibernateUtil;
 import il.aircon.model.IncorrectOrderStateChange;
 import il.aircon.model.IncorrectValueException;
 import il.aircon.model.Order;
@@ -10,18 +19,16 @@ import il.aircon.model.Order.StateType;
 
 /**
  * <p>Класс предназначен для манипулирования данными модели на основании действий пользователя.
- * Абстрагирован от представления данных внутри модели и от вида пользовательского интерфейса.</p>
+ * абстрагирован от представления данных внутри модели и от вида пользовательского интерфейса.</p>
  * 
  * <p>Зона ответственности:
  * <ol>
  * 	<li>Формирование и поиск сущностей модели на основании запроса слоя пользовательского интерфейса</li>
- * 	<li>Анализ запросов пользовательского интерфейса на предмет корректности. Иными словами если пользователь
- *      вводит некоторое числовоее значение в строковое поле ввода, корректность введенного значения проверяется
+ * 	<li>Анализ запросов пользовательского интерфейса на предмет корректности. Иными словами, если пользователь
+ *      вводит некоторое числовоее значение в строковое поле ввода, корректность введенного значения проверсется
  *      здесь.</li>
  * </ol>
  * </p> 
- * @author Илья Майзус
- *
  */
 public final class OrdersManager 
 {
@@ -32,7 +39,7 @@ public final class OrdersManager
 	 * @param productManufacturerAndModel Наименование производителя и модели устанавливаемого прибора
 	 * @param customerName Наименование заказчика
 	 * @param targetAddress Адрес, по которому предполагается произвести монтаж
-	 * @throws InvalidInputException В влучае неверных входных данных
+	 * @throws InvalidInputException В случае неверных входных данных
 	 * @throws ArgumentCantBeNull В случае если один или несколько переданных параметров имеют значение null
 	 * @throws FieldIsUnchangeable В случае если данное поле не может быть изменено при данном состоянии заказа
 	 * @throws IncorrectValueException В случае некорректного значения
@@ -54,9 +61,9 @@ public final class OrdersManager
 	 * Правка дополнительных полей в обход этой функции нежелательна.
 	 * @param order Заказ
 	 * @param pipeLineLength_s Строка, содержащая длину трубопроводной магистрали между внутренним и внешним блоками в метрах
-	 * @param additionalCoolantAmount_s Строка, содержащая количество дозаправленного хдадагента в килограммах
+	 * @param additionalCoolantAmount_s Строка, содержащая количество дозаправленного хладагента в килограммах
 	 * @param pumpNeeded Необходимость установки дренажой помпы
-	 * @throws InvalidInputException В влучае неверных входных данных
+	 * @throws InvalidInputException В случае неверных входных данных
 	 * @throws ArgumentCantBeNull В случае если один или несколько переданных параметров имеют значение null
 	 * @throws FieldIsUnchangeable В случае если данное поле не может быть изменено при данном состоянии заказа
 	 * @throws IncorrectValueException В случае некорректного значения
@@ -94,8 +101,37 @@ public final class OrdersManager
 		calculateFullCost(order);		
 	}
 	
+	public static Order[] Search(String keywords)
+	{
+		String[] kwarr = keywords.split(" ");
+		
+		SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
+        Session session = sessionFactory.openSession();
+        Query query_all = session.createQuery("from Order");
+        List list = query_all.list();
+        
+        ArrayList<Order> target = new ArrayList<Order>();
+        for (Object obj : list)
+        {
+        	Order ord = (Order)obj;
+        	boolean add = false;
+        	for (int i = 0; i < kwarr.length; i++)
+        	{
+        		if (ord.getCustomerName().contains(kwarr[i])) add = true;
+        		if (ord.getProductManufacturerAndModel().contains(kwarr[i])) add = true;
+        		if (ord.getTargetAddress().contains(kwarr[i])) add = true;
+        	}
+        	if (add)
+        	{
+        		target.add(ord);
+        	}
+        }
+        
+        return (Order[]) target.toArray(new Order[] {});
+	}
+	
 	/**
-	 * Функция вычисляет и вписывает полную стоимость выполнения заказа
+	 * Функция вычислсет и вписывает полную стоимость выполнения заказа
 	 * @param order Заказ
 	 */
 	private static void calculateFullCost(Order order) {
@@ -109,7 +145,7 @@ public final class OrdersManager
 	 * @param customerName Наименование заказчика
 	 * @param targetAddress Адрес, по которому предполагается произвести монтаж
 	 * @return Возвращается объект {@link il.aircon.model.Order}
-	 * @throws InvalidInputException В влучае неверных входных данных
+	 * @throws InvalidInputException В случае неверных входных данных
 	 * @throws ArgumentCantBeNull В случае если один или несколько переданных параметров имеют значение null
 	 * @throws FieldIsUnchangeable В случае если данное поле не может быть изменено при данном состоянии заказа
 	 * @throws IncorrectValueException В случае некорректного значения
@@ -123,22 +159,27 @@ public final class OrdersManager
 		Order res = new Order();
 		res.setState(StateType.STATE_NEW);
 		setBasicOrderFields(res, productManufacturerAndModel, customerName, targetAddress);
+		
+		Session session = HibernateUtil.openSession();
+		session.save(res);
+		session.close();
+		
 		return res;
 	}
 	
 	/**
-	 * Создает новый заказ, предполагая, что место уже осмотрено. 
+	 * Создает новый заказ, предполагас, что место уже осмотрено. 
 	 * Присваивает ему статус {@link il.aircon.model.Order.StateType.STATE_AFTER_INSPECTION}.
 	 * Рассчитывает стоимость работ.
 	 * 
-	 * @param productManufacturerAndModel Наименование производителя и модели устанавливаемого прибора
-	 * @param customerName Наименование заказчика
-	 * @param targetAddress Адрес, по которому предполагается произвести монтаж
+	 * @param productManufacturerAndModel саименование производителс и модели устанавливаемого прибора
+	 * @param customerName саименование заказчика
+	 * @param targetAddress сдрес, по которому предполагаетсс произвести монтаж
 	 * @param pipeLineLength_s Строка, содержащая длину трубопроводной магистрали между внутренним и внешним блоками в метрах
-	 * @param additionalCoolantAmount_s Строка, содержащая количество дозаправленного хдадагента в килограммах
-	 * @param pumpNeeded Необходимость установки дренажой помпы
-	 * @return Возвращается объект {@link il.aircon.model.Order}
-	 * @throws InvalidInputException В влучае неверных входных данных
+	 * @param additionalCoolantAmount_s Строка, содержащая количество дозаправленного хладагента в килограммах
+	 * @param pumpNeeded необходимость установки дренажой помпы
+	 * @return Возвращаетсс объект {@link il.aircon.model.Order}
+	 * @throws InvalidInputException В случае неверных входных данных
 	 * @throws ArgumentCantBeNull В случае если один или несколько требуемых параметров имеют значение null
 	 * @throws FieldIsUnchangeable В случае если данное поле не может быть изменено при данном состоянии заказа
 	 * @throws IncorrectValueException В случае неверного ввода данных
@@ -158,17 +199,21 @@ public final class OrdersManager
 		setBasicOrderFields(res, productManufacturerAndModel, customerName, targetAddress);
 		setAfterInspectionOrderFields(res, pipeLineLength_s, additionalCoolantAmount_s, pumpNeeded);
 
+		Session session = HibernateUtil.openSession();
+		session.save(res);
+		session.close();
+
 		return res;
 	}
 
 	/**
-	 * Изменяет состояние и/или свойства заказа
-	 * @param productManufacturerAndModel Наименование производителя и модели устанавливаемого прибора
-	 * @param customerName Наименование заказчика
-	 * @param targetAddress Адрес, по которому предполагается произвести монтаж
+	 * Изменсет состояние и/или свойства заказа
+	 * @param productManufacturerAndModel саименование производителс и модели устанавливаемого прибора
+	 * @param customerName саименование заказчика
+	 * @param targetAddress сдрес, по которому предполагаетсс произвести монтаж
 	 * @param pipeLineLength_s Строка, содержащая длину трубопроводной магистрали между внутренним и внешним блоками в метрах
-	 * @param additionalCoolantAmount_s Строка, содержащая количество дозаправленного хдадагента в килограммах
-	 * @param pumpNeeded Необходимость установки дренажой помпы
+	 * @param additionalCoolantAmount_s Строка, содержащая количество дозаправленного хладагента в килограммах
+	 * @param pumpNeeded необходимость установки дренажой помпы
 	 * @throws ArgumentCantBeNull В случае если один или несколько требуемых параметров имеют значение null
 	 * @throws InvalidInputException В случае неверных входных данных
 	 * @throws FieldIsUnchangeable В случае если данное поле не может быть изменено при данном состоянии заказа

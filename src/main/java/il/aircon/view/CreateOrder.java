@@ -30,7 +30,6 @@ import org.hibernate.SessionFactory;
 @WebServlet(description = "User form for creating of the new order", urlPatterns = { "/CreateOrder" })
 public final class CreateOrder extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private Session session;
       
 	private static String pipeLineLength_INCORRECT_MESSAGE = "Значение длины трубопроводной магистрали между внутренним и внешним блоками должно быть положительным числом. "
 			+ "Допускаются десятичные дроби.";
@@ -42,8 +41,6 @@ public final class CreateOrder extends HttpServlet {
      */
     public CreateOrder() {
         super();
-        SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
-        session = sessionFactory.openSession();
     }
 
     private void printForm(
@@ -211,24 +208,21 @@ public final class CreateOrder extends HttpServlet {
 			Boolean pumpNeeded = (req.getParameter("pumpNeeded") != null && req.getParameter("pumpNeeded").equals("on"));
 			
 			PrintWriter pw = resp.getWriter();
-			Order order;
 			boolean pipeLineLength_incorrect = false, additionalCoolantAmount_incorrect = false;
 			try
 			{
 				if (stateType == StateType.STATE_NEW)
 				{
-					order = OrdersManager.CreateNewOrder(productManufacturerAndModel, customerName, targetAddress);
+					OrdersManager.CreateNewOrder(productManufacturerAndModel, customerName, targetAddress);
 				}
 				else if (stateType == StateType.STATE_AFTER_INSPECTION)
 				{
-					order = OrdersManager.CreateInspectionCompleteOrder(productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded);
+					OrdersManager.CreateInspectionCompleteOrder(productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded);
 				}
 				else
 				{
 					throw new UnsupportedOrderState(stateType);
 				}
-				
-				session.save(order);
 				
 				
 			}

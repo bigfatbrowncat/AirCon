@@ -1,8 +1,0 @@
-﻿Creation:
-
-CREATE SCHEMA `AirCon` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci ;
-
-Reset:
-
-drop table `aircon`.`calc_properties`
-drop table `aircon`.`orders`
