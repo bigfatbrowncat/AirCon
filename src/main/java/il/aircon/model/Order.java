@@ -22,10 +22,10 @@ public class Order
 		{
 			switch (this)
 			{
-			case STATE_NEW: return "new";
-			case STATE_AFTER_INSPECTION: return "after inspection";
-			case STATE_COMPLETE: return "complete";
-			case STATE_CANCELLED: return "cancelled";
+			case STATE_NEW: return "новый";
+			case STATE_AFTER_INSPECTION: return "осмотрен";
+			case STATE_COMPLETE: return "завершен";
+			case STATE_CANCELLED: return "отменен";
 			default:
 				return null;
 			}

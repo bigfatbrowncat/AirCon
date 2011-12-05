@@ -27,93 +27,68 @@ public class ListOrders extends HttpServlet {
         super();
         // TODO Auto-generated constructor stub
     }
-/*
+
     private void printForm(
     		PrintWriter pw, 
     		String searchRequest)
     {
-		pw.printf("<html><head>");
-		pw.printf("<title>Пои�?к заказа</title>\n");
 
-		pw.printf("<form method=\"get\">\n");
-		pw.printf("<input name=\"search\" value=\"%1$s\"/> <input style=\"padding: 2px; margin: 2px; margin-top: 5px; \"type=\"submit\" value=\"И�?кать\" />", searchRequest);
+    	pw.printf("<html><head>");
+    	pw.printf("<style>");
+		pw.printf("<title>Поиск заказа</title>\n");
+		pw.printf("</head><body>");    	
+
+		pw.printf("<form style=\"padding: 3\" method=\"get\">\n");
+		pw.printf("<div style=\"padding: 3px 8px 3px 8px; background: #887055\">\n");
+		pw.printf("Искать заказчика: <input name=\"customerName\" value=\"%1$s\"/>, " +
+				  "марку и модель сплит-системы: <input name=\"productManufacturerAndModel\" value=\"%1$s\"/>, " +
+				  "адрес установки: <input name=\"targetAddress\" value=\"%1$s\"/>, " +
+				  "среди <input type=\"checkbox\" name=\"new\" />новых, " +
+				  "<input type=\"checkbox\" name=\"inspected\" />осмотренных, " +
+				  "<input type=\"checkbox\" name=\"completed\" />завершенных и " +
+				  "<input type=\"checkbox\" name=\"cancelled\" />отмененных заказов. " +
+				  "<input style=\"padding: 2px; margin: 2px; margin-top: 5px; \"type=\"submit\" value=\"Найти\" />", searchRequest);
+		pw.printf("</div>\n");
 		pw.printf("</form>\n");
 		
-		pw.printf("<table>\n");
+		if (searchRequest != "" && searchRequest != null)
+		{
+			Order[] orders = OrdersManager.Search(searchRequest);
 
-		pw.printf("<tr>\n");
-		pw.printf("<td style=\"width: 300pt\">Со�?то�?ние заказа:</td>");
-		
-		boolean new_selected = false, after_insp_selected = false;
-		if (state == StateType.STATE_NEW)
-		{
-			new_selected = true;
-		}
-		else if (state == StateType.STATE_AFTER_INSPECTION)
-		{
-			after_insp_selected = true;
-		}
-		else
-			throw new UnsupportedOrderState(state);
+			pw.printf("<table cellpadding=\"3\" cellspacing=\"3\">\n");
+			pw.printf("<tr style=\"color: white; background: #887055\"><td style=\"padding: 3px 6px 3px 6px; \">Код</td>" +
+					"<td style=\"padding: 3px 8px 3px 8px; \">Наименование заказчика</td>" +
+					"<td style=\"padding: 3px 8px 3px 8px; \">Марка и модель сплит-системы</td>" +
+					"<td style=\"padding: 3px 8px 3px 8px; \">Адрес заказчика</td>" +
+					"<td style=\"padding: 3px 8px 3px 8px; \">Статус</td></tr>");
+			for (Order ord : orders)
+			{
+				pw.printf("<tr style=\"background: #eeeeee\"><td>%1$d</td><td>%2$s</td><td>%3$s</td><td>%4$s</td><td>%5$s</td></tr>", 
+						ord.getUid(), 
+						ord.getCustomerName(), 
+						ord.getProductManufacturerAndModel(), 
+						ord.getTargetAddress(), 
+						ord.getState().toString());
+			}
 			
-		
-		pw.printf("<td><select id=\"state\" name=\"state\" onchange=\"check_additional();\" style=\"width: 250pt\">");
-		pw.printf("<option value=\"new\" %1$s>�?овый</option>", new_selected ? "selected" : "");
-		pw.printf("<option value=\"after_insp\" %1$s>О�?мотр произведен</option>", after_insp_selected ? "selected" : "");
-		pw.printf("</select></td>");
-		pw.printf("</tr>\n");
-		
-		pw.printf("<tr id=\"productManufacturerAndModel_row\" >\n");
-		pw.printf("<td>Производитель и модель:</td> <td><input style=\"width: 250pt\" name=\"productManufacturerAndModel\" id=\"productManufacturerAndModel\" type=\"text\" value=\"%1$s\" /></td>", productManufacturerAndModel);
-		pw.printf("</tr>\n");
-
-		pw.printf("<tr id=\"customerName_row\">\n");
-		pw.printf("<td>�?аименование заказчика:</td> <td><input style=\"width: 250pt\" name=\"customerName\" id=\"customerName\" type=\"text\" value=\"%1$s\" /></td>", customerName);
-		pw.printf("</tr>\n");
-
-		pw.printf("<tr id=\"targetAddress_row\">\n");
-		pw.printf("<td>�?дре�? проведени�? работ:</td> <td><input style=\"width: 250pt\" name=\"targetAddress\" id=\"targetAddress\" type=\"text\" value=\"%1$s\" /></td>", targetAddress);
-		pw.printf("</tr>\n");
-
-		pw.printf("<tr id=\"pipeLineLength_row\" style=\"visibility: hidden\">\n");
-		pw.printf("<td>Длина маги�?трали между блоками:</td> <td><input %2$s style=\"width: 250pt\" name=\"pipeLineLength\" id=\"pipeLineLength\" type=\"text\" value=\"%1$s\" />, <b>м</b></td>", 
-				pipeLineLength, 
-				pipeLineLength_incorrect ? "class=\"incorrect\"" : "");
-		pw.printf("</tr>\n");
-
-		pw.printf("<tr id=\"additionalCoolantAmount_row\" style=\"visibility: hidden\">\n");
-		pw.printf("<td>Количе�?тво дозаправленного хладагента:</td> <td><input %2$s style=\"width: 250pt\" name=\"additionalCoolantAmount\" id=\"additionalCoolantAmount\" type=\"text\" value=\"%1$s\" />, <b>кг</b></td>", 
-				additionalCoolantAmount, 
-				additionalCoolantAmount_incorrect ? "class=\"incorrect\"" : "");
-		pw.printf("</tr>\n");
-
-		pw.printf("<tr id=\"pumpNeeded_row\" style=\"visibility: hidden\">\n");
-		pw.printf("<td>�?еобходима у�?тановка дренажной помпы:</td><td><input style=\"width: 250pt\" name=\"pumpNeeded\" id=\"pumpNeeded\" type=\"checkbox\" %1$s></td>", (pumpNeeded ? "checked" : ""));
-		pw.printf("</tr>\n");
-		pw.printf("</table>\n");
-
-		if (incorrect_input_message != null && !incorrect_input_message.equals(""))
-		{
-			pw.printf("<p class=\"incorrect_input_msg\"><b>�?еверный ввод: </b>%1$s</p>\n", incorrect_input_message);		
+			pw.printf("</table>\n");
 		}
 		
-		pw.println("<input style=\"padding: 2px; margin: 2px; margin-top: 5px; \"type=\"submit\" value=\"Прин�?ть заказ\" />");		
 		
-		pw.printf("</form>");
-		pw.printf("</body>");
-		pw.printf("<script language=\"javascript\">\n");
-		pw.printf("check_additional();\n");
-		pw.printf("</script>");
-		pw.printf("</html>");    	
+		pw.printf("</body></html>");    	
     }    
-    */
+    
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		request.setCharacterEncoding("UTF-8");
+		response.setContentType("text/html; charset=UTF-8");
+		response.setCharacterEncoding("UTF-8");
+
+		PrintWriter pw = response.getWriter();
 		
-		
-		Order[] orders = OrdersManager.Search("qwe asd");
+		printForm(pw, "c b");
 		
 	}
 

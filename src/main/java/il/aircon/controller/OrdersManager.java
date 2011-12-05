@@ -107,24 +107,14 @@ public final class OrdersManager
 		
 		SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
         Session session = sessionFactory.openSession();
-        Query query_all = session.createQuery("from Order");
+        Query query_all = session.createQuery("from Order where ");
         List list = query_all.list();
         
         ArrayList<Order> target = new ArrayList<Order>();
         for (Object obj : list)
         {
         	Order ord = (Order)obj;
-        	boolean add = false;
-        	for (int i = 0; i < kwarr.length; i++)
-        	{
-        		if (ord.getCustomerName().contains(kwarr[i])) add = true;
-        		if (ord.getProductManufacturerAndModel().contains(kwarr[i])) add = true;
-        		if (ord.getTargetAddress().contains(kwarr[i])) add = true;
-        	}
-        	if (add)
-        	{
-        		target.add(ord);
-        	}
+       		target.add(ord);
         }
         
         return (Order[]) target.toArray(new Order[] {});
