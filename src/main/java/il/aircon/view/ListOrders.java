@@ -70,7 +70,7 @@ public class ListOrders extends HttpServlet {
 		pw.printf("</form>\n");
 		
 		
-		Order[] orders = OrdersManager.Search(customerNameSearchRequest,
+		Order[] orders = OrdersManager.SearchOrder(customerNameSearchRequest,
 	    		productManufacturerAndModelSearchRequest,
 	    		targetAddressSearchRequest,
 	    		searchNew, 

@@ -2,6 +2,7 @@ package il.aircon.view;
 
 import il.aircon.controller.ArgumentCantBeNull;
 import il.aircon.controller.InvalidInputException;
+import il.aircon.controller.OrderIsCompleteException;
 import il.aircon.controller.OrdersManager;
 import il.aircon.model.FieldIsUnchangeable;
 import il.aircon.model.HibernateUtil;
@@ -45,6 +46,7 @@ public final class CreateOrder extends HttpServlet {
 
     private void printForm(
     		PrintWriter pw, 
+    		int id,
     		Order.StateType state,
     		String productManufacturerAndModel,
     		String customerName,
@@ -58,30 +60,58 @@ public final class CreateOrder extends HttpServlet {
     		
     		String incorrect_input_message) throws UnsupportedOrderState
     {
+    	boolean newOrder = id == -1;
+    	
 		pw.printf("<html><head>");
-		pw.printf("<title>Создание заказа</title>\n");
+		if (newOrder)
+		{
+			pw.printf("<title>Создание заказа</title>\n");
+		}
+		else
+		{
+			pw.printf("<title>Правка заказа</title>\n");
+		}
 
 		pw.printf("<script language=\"javascript\">\n");
+		
 		pw.printf("function check_additional()\n");
 		pw.printf("{\n");
 		pw.printf("  var selstate = document.getElementById(\"state\");\n");
+		pw.printf("  var editing_disabled = ((selstate.value == \"complete\") || (selstate.value == \"cancelled\")) ? \"disabled\" : \"\";");
+
 		pw.printf("  document.getElementById(\"pipeLineLength_row\").style.visibility = ((selstate.value != \"new\") ? \"visible\" : \"hidden\");\n");
 		pw.printf("  document.getElementById(\"additionalCoolantAmount_row\").style.visibility = ((selstate.value != \"new\") ? \"visible\" : \"hidden\");\n");
 		pw.printf("  document.getElementById(\"pumpNeeded_row\").style.visibility = ((selstate.value != \"new\") ? \"visible\" : \"hidden\");\n");
+
+		pw.printf("  document.getElementById(\"productManufacturerAndModel\").disabled = editing_disabled;\n");
+		pw.printf("  document.getElementById(\"customerName\").disabled = editing_disabled;\n");
+		pw.printf("  document.getElementById(\"targetAddress\").disabled = editing_disabled;\n");
+		pw.printf("  document.getElementById(\"pipeLineLength\").disabled = editing_disabled;\n");
+		pw.printf("  document.getElementById(\"additionalCoolantAmount\").disabled = editing_disabled;\n");
+		pw.printf("  document.getElementById(\"pumpNeeded\").disabled = editing_disabled;\n");
 		pw.printf("}\n");
 		pw.printf("</script>\n");
+		
 		pw.printf("<style>\n");
 		pw.printf("  input.incorrect { background: #ffaaaa }\n");
 		pw.printf("  .incorrect_input_msg { color: #880000 }\n");
 		pw.printf("</style>\n");
 		pw.printf("</head><body>\n");
 		pw.printf("<form method=\"post\">\n");
+		
+		if (!newOrder)
+			pw.printf("<input type=\"hidden\" id=\"id\" value=\"%1$d\" />", id);
+		
 		pw.printf("<table>\n");
 
 		pw.printf("<tr>\n");
 		pw.printf("<td style=\"width: 300pt\">Состояние заказа:</td>");
 		
-		boolean new_selected = false, after_insp_selected = false;
+		boolean new_selected = false, 
+				after_insp_selected = false,
+				complete_selected = false,
+				cancelled_selected = false;
+		
 		if (state == StateType.STATE_NEW)
 		{
 			new_selected = true;
@@ -90,13 +120,35 @@ public final class CreateOrder extends HttpServlet {
 		{
 			after_insp_selected = true;
 		}
+		else if (state == StateType.STATE_COMPLETE)
+		{
+			complete_selected = true;
+		}
+		else if (state == StateType.STATE_CANCELLED)
+		{
+			cancelled_selected = true;
+		}
 		else
 			throw new UnsupportedOrderState(state);
 			
 		
-		pw.printf("<td><select id=\"state\" name=\"state\" onchange=\"check_additional();\" style=\"width: 250pt\">");
-		pw.printf("<option value=\"new\" %1$s>Новый</option>", new_selected ? "selected" : "");
+		pw.printf("<td><select id=\"state\" name=\"state\" onchange=\"check_additional();\" style=\"width: 250pt\" %1$s>", complete_selected ? "disabled=\"disabled\"" : "");
+		if (state == Order.StateType.STATE_NEW)
+		{
+			pw.printf("<option value=\"new\" %1$s>Новый</option>", new_selected ? "selected" : "");
+		}
 		pw.printf("<option value=\"after_insp\" %1$s>Осмотр произведен</option>", after_insp_selected ? "selected" : "");
+		if (!newOrder)
+		{
+			if (state == Order.StateType.STATE_AFTER_INSPECTION)
+			{
+				pw.printf("<option value=\"complete\" %1$s>Завершен</option>", complete_selected ? "selected" : "");
+			}
+			if (state != Order.StateType.STATE_COMPLETE)
+			{
+				pw.printf("<option value=\"cancelled\" %1$s>Отменен</option>", cancelled_selected ? "selected" : "");
+			}
+		}
 		pw.printf("</select></td>");
 		pw.printf("</tr>\n");
 		
@@ -125,7 +177,7 @@ public final class CreateOrder extends HttpServlet {
 		pw.printf("</tr>\n");
 
 		pw.printf("<tr id=\"pumpNeeded_row\" style=\"visibility: hidden\">\n");
-		pw.printf("<td>Необходима установка дренажной помпы:</td><td><input style=\"width: 250pt\" name=\"pumpNeeded\" id=\"pumpNeeded\" type=\"checkbox\" %1$s></td>", (pumpNeeded ? "checked" : ""));
+		pw.printf("<td>Необходима установка дренажной помпы:</td><td><input style=\"width: 250pt\" name=\"pumpNeeded\" id=\"pumpNeeded\" type=\"checkbox\" %1$s></td>", ((pumpNeeded != null && pumpNeeded) ? "checked" : ""));
 		pw.printf("</tr>\n");
 		pw.printf("</table>\n");
 
@@ -165,12 +217,51 @@ public final class CreateOrder extends HttpServlet {
 		response.setCharacterEncoding("UTF-8");
 
 		PrintWriter pw = response.getWriter();
-		try {
-			printForm(pw, StateType.STATE_NEW, 
-					"", "", "", "0", "0", true, false, false, null);
-		} catch (UnsupportedOrderState e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+
+		int id = -1;
+		if (request.getParameter("id") != null && request.getParameter("id") != "")
+		{
+			try
+			{
+				id = Integer.parseInt(request.getParameter("id"));
+			} 
+			catch (NumberFormatException exc)
+			{
+				// Do nothing. Just go on...
+			}
+		}
+		
+		Order got = OrdersManager.GetOrderById(id); 
+
+		
+		if (id == -1)
+		{
+			// Форма создания нового заказа
+			try {
+				printForm(pw, id, StateType.STATE_NEW, 
+						"", "", "", "0", "0", true, false, false, null);
+			} catch (UnsupportedOrderState e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		else
+		{
+			
+			// Форма правки существующего заказа
+			try {
+				printForm(pw, id, 
+						got.getState(), 
+						got.getProductManufacturerAndModel(), 
+						got.getCustomerName(), 
+						got.getTargetAddress(), 
+						got.getPipeLineLength() != null ? got.getPipeLineLength().toString() : null,
+						got.getAdditionalCoolantAmount() != null ? got.getAdditionalCoolantAmount().toString() : null, 
+						got.getPumpNeeded(), false, false, null);
+			} catch (UnsupportedOrderState e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}			
 		}
 
 	}
@@ -182,7 +273,23 @@ public final class CreateOrder extends HttpServlet {
 		resp.setContentType("text/html; charset=UTF-8");
 		resp.setCharacterEncoding("UTF-8");
 		
-		String incorrect_input_message = null; 
+		String incorrect_input_message = null;
+		
+		int id = -1;
+		if (req.getParameter("id") != null && req.getParameter("id") != "")
+		{
+			try
+			{
+				id = Integer.parseInt(req.getParameter("id"));
+			} 
+			catch (NumberFormatException exc)
+			{
+				// Do nothing. Just go on...
+			}
+		}
+		
+		Order got = OrdersManager.GetOrderById(id); 
+		
 		try
 		{
 			String state = req.getParameter("state");
@@ -194,6 +301,14 @@ public final class CreateOrder extends HttpServlet {
 			else if (state.equals("after_insp"))
 			{
 				stateType = StateType.STATE_AFTER_INSPECTION;
+			}
+			else if (state.equals("complete"))
+			{
+				stateType = StateType.STATE_COMPLETE;
+			}
+			else if (state.equals("cancelled"))
+			{
+				stateType = StateType.STATE_CANCELLED;
 			}
 			else
 			{
@@ -211,19 +326,43 @@ public final class CreateOrder extends HttpServlet {
 			boolean pipeLineLength_incorrect = false, additionalCoolantAmount_incorrect = false;
 			try
 			{
-				if (stateType == StateType.STATE_NEW)
+				if (id == -1)
 				{
-					OrdersManager.CreateNewOrder(productManufacturerAndModel, customerName, targetAddress);
-				}
-				else if (stateType == StateType.STATE_AFTER_INSPECTION)
-				{
-					OrdersManager.CreateInspectionCompleteOrder(productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded);
+					if (stateType == StateType.STATE_NEW)
+					{
+						OrdersManager.CreateNewOrder(productManufacturerAndModel, customerName, targetAddress);
+					}
+					else if (stateType == StateType.STATE_AFTER_INSPECTION)
+					{
+						OrdersManager.CreateInspectionCompleteOrder(productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded);
+					}
+					else
+					{
+						throw new UnsupportedOrderState(stateType);
+					}
 				}
 				else
 				{
-					throw new UnsupportedOrderState(stateType);
+					switch (stateType)
+					{
+					case STATE_NEW:
+						OrdersManager.ModifyOrder(got, stateType, productManufacturerAndModel, customerName, targetAddress, null, null, null);
+						break;
+					case STATE_AFTER_INSPECTION:
+						OrdersManager.ModifyOrder(got, stateType, productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded);
+						break;
+					case STATE_CANCELLED:
+						OrdersManager.ModifyOrder(got, stateType, null, null, null, null, null, null);
+						break;
+					case STATE_COMPLETE:
+						OrdersManager.ModifyOrder(got, stateType, null, null, null, null, null, null);
+						break;
+					default:
+						throw new UnsupportedOrderState(stateType);
+					}
+
+					
 				}
-				
 				
 			}
 			catch (InvalidInputException iie)
@@ -262,7 +401,7 @@ public final class CreateOrder extends HttpServlet {
 			
 			if (incorrect_input_message != null)
 			{
-				printForm(pw, stateType, productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded, 
+				printForm(pw, id, stateType, productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded, 
 						pipeLineLength_incorrect, additionalCoolantAmount_incorrect, incorrect_input_message);
 			}
 			else

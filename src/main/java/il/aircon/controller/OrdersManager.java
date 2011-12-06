@@ -115,7 +115,7 @@ public final class OrdersManager
 		return sb.toString();
 	}
 	
-	public static Order[] Search(String customerNameSearchRequest,
+	public static Order[] SearchOrder(String customerNameSearchRequest,
 			String productManufacturerAndModelSearchRequest,
 			String targetAddressSearchRequest,
     		boolean searchNew, 
@@ -257,7 +257,25 @@ public final class OrdersManager
 		
 		if (stateType == StateType.STATE_AFTER_INSPECTION)
 			setAfterInspectionOrderFields(order, pipeLineLength_s, additionalCoolantAmount_s, pumpNeeded);
-			
+		
+		Session session = HibernateUtil.openSession();
+		session.merge(order);
+		session.flush();
+		session.close();
+	}
+	
+	public static Order GetOrderById(int id)
+	{
+		SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
+		Session session = sessionFactory.openSession();
+		
+		Query query = session.createQuery("from Order where uid=" + id);
+		List ords = query.list();
+		
+		session.close();
+		if (ords.size() == 1) return (Order)ords.get(0);
+		else
+			return null;
 	}
 
 }
