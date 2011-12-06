@@ -6,6 +6,8 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Currency;
 
+import org.hibernate.engine.query.OrdinalParameterDescriptor;
+
 /**
  * Заказ
  */
@@ -13,10 +15,36 @@ public class Order
 {
 	public enum StateType
 	{
-		STATE_NEW 				   ,	//				вновь созданная заявка
-		STATE_AFTER_INSPECTION 	   ,	//				после проведения осмотра предполагаемого места установки
-		STATE_COMPLETE		 	   ,	//				после монтажа сплит-системы
-		STATE_CANCELLED;		 	    //				заявка отменена
+		
+		STATE_NEW(0) 				   ,	//				вновь созданная заявка
+		STATE_AFTER_INSPECTION(1) 	   ,	//				после проведения осмотра предполагаемого места установки
+		STATE_COMPLETE(2)		 	   ,	//				после монтажа сплит-системы
+		STATE_CANCELLED(3);		 	    //				заявка отменена
+		
+		private int value;
+
+		StateType(int value) { this.value = value; }
+
+		/**
+		 * TODO: Использовать это для сериализации
+		 * @return
+		 */
+		public int toInt() { return value; }
+
+		/**
+		 * TODO: Использовать это для сериализации
+		 * @return
+		 */
+		public StateType fromInt(int value)
+		{
+			switch (value)
+			{
+			case 11: return STATE_NEW;
+			case 22: return STATE_AFTER_INSPECTION;
+			case 33: return STATE_COMPLETE;
+			default: return STATE_CANCELLED;
+			}
+		}
 		
 		public String toString() 
 		{
@@ -30,6 +58,8 @@ public class Order
 				return null;
 			}
 		};
+		
+		
 	}
 	
 	// Служебные поля

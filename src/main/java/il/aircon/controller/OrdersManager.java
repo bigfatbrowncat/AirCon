@@ -101,23 +101,52 @@ public final class OrdersManager
 		calculateFullCost(order);		
 	}
 	
-	public static Order[] Search(String keywords)
+	private static String replaceWithPercents(String str)
 	{
-		String[] kwarr = keywords.split(" ");
+		if (str == null) return "%";
 		
+		StringBuilder sb = new StringBuilder("%");
+		for (int i = 0; i < str.length(); i++)
+		{
+			char ch = str.charAt(i);
+			if (ch == ' ' || ch == '\t') sb.append('%'); else sb.append(ch);
+		}
+		if (sb.toString().length() > 1) sb.append("%");
+		return sb.toString();
+	}
+	
+	public static Order[] Search(String customerNameSearchRequest,
+			String productManufacturerAndModelSearchRequest,
+			String targetAddressSearchRequest,
+    		boolean searchNew, 
+    		boolean searchInspected, 
+    		boolean searchCompleted, 
+    		boolean searchCancelled)
+	{
 		SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
-        Session session = sessionFactory.openSession();
-        Query query_all = session.createQuery("from Order where ");
-        List list = query_all.list();
+		Session session = sessionFactory.openSession();
         
-        ArrayList<Order> target = new ArrayList<Order>();
-        for (Object obj : list)
-        {
-        	Order ord = (Order)obj;
-       		target.add(ord);
-        }
+		String qadd1 = "customerName like '" + replaceWithPercents(customerNameSearchRequest) + "'";
+		String qadd2 = "productManufacturerAndModel like '" + replaceWithPercents(productManufacturerAndModelSearchRequest) + "'";
+		String qadd3 = "targetAddress like '" + replaceWithPercents(targetAddressSearchRequest) + "'";
+		
+		String qadd4 = searchNew ? "state = '0'" : "";
+
+		String orr = (qadd4.equals("") ? "" : " or "); 
+		qadd4 += (searchInspected ? orr + " state = '1'" : "");
+		
+		orr = (qadd4.equals("") ? "" : " or ");
+		qadd4 += (searchCompleted ? orr + " state = '2'" : "");
+		
+		orr = (qadd4.equals("") ? "" : " or ");
+		qadd4 += (searchCancelled ? orr + " state = '3'" : "");
+		
+        Query query = session.createQuery("from Order where " + qadd1 + " and " + qadd2 + " and " + qadd3 +
+        		(!qadd4.equals("") ? " and (" + qadd4 + ")" : ""));
+        List list = query.list();
         
-        return (Order[]) target.toArray(new Order[] {});
+        session.close();
+        return (Order[]) list.toArray(new Order[] {});
 	}
 	
 	/**
