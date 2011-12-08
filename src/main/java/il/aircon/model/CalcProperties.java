@@ -1,6 +1,8 @@
 package il.aircon.model;
 
-import java.util.Currency;
+import il.aircon.controller.ArgumentCantBeNull;
+
+import java.math.BigDecimal;
 
 /**
  * Дополнительные параметры при расчете стоимости
@@ -9,46 +11,61 @@ public class CalcProperties {
 	
 	private Long uid;									//				уникальный идентификатор
 
-	private Currency modulesInstallationCost;			//				стоимость установки внутреннего и наружного блоков
+	private BigDecimal modulesInstallationCost;			//				стоимость установки внутреннего и наружного блоков
 	private Float baseTubeLength;						// [метры]		длина магистрали, стоимость которой включена в стоимость установки
-	private Currency tubeCost;							// [руб/метр]	стоимость прокладки одного метра магистрали
-	private Currency coolantCost;						// [руб/кг]		стоимость хладагента
-	private Currency pumpCost;							// [руб]		стоимость дренажной помпы
+	private BigDecimal tubeCost;						// [руб/метр]	стоимость прокладки одного метра магистрали
+	private BigDecimal coolantCost;						// [руб/кг]		стоимость хладагента
+	private BigDecimal pumpCost;						// [руб]		стоимость дренажной помпы
 	
-	public Currency getModulesInstallationCost() {
+	public BigDecimal getModulesInstallationCost() {
 		return modulesInstallationCost;
 	}
-	public void setModulesInstallationCost(Currency modulesInstallationCost) {
+	public void setModulesInstallationCost(BigDecimal modulesInstallationCost) throws IncorrectValueException, ArgumentCantBeNull {
+		if (modulesInstallationCost == null) throw new ArgumentCantBeNull("modulesInstallationCost");
+		if (modulesInstallationCost.compareTo(new BigDecimal(0)) < 0) throw new IncorrectValueException("modulesInstallationCost");
 		this.modulesInstallationCost = modulesInstallationCost;
 	}
 	public float getBaseTubeLength() {
 		return baseTubeLength;
 	}
-	public void setBaseTubeLength(float baseTubeLength) {
+	public void setBaseTubeLength(float baseTubeLength) throws IncorrectValueException {
+		if (baseTubeLength < 0) throw new IncorrectValueException("baseTubeLength");
 		this.baseTubeLength = baseTubeLength;
 	}
-	public Currency getTubeCost() {
+	public BigDecimal getTubeCost() {
 		return tubeCost;
 	}
-	public void setTubeCost(Currency tubeCost) {
+	public void setTubeCost(BigDecimal tubeCost) throws ArgumentCantBeNull, IncorrectValueException {
+		if (tubeCost == null) throw new ArgumentCantBeNull("tubeCost");
+		if (tubeCost.compareTo(new BigDecimal(0)) < 0) throw new IncorrectValueException("tubeCost");
 		this.tubeCost = tubeCost;
 	}
-	public Currency getCoolantCost() {
+	public BigDecimal getCoolantCost() {
 		return coolantCost;
 	}
-	public void setCoolantCost(Currency coolantCost) {
+	public void setCoolantCost(BigDecimal coolantCost) throws ArgumentCantBeNull, IncorrectValueException {
+		if (coolantCost == null) throw new ArgumentCantBeNull("coolantCost");
+		if (coolantCost.compareTo(new BigDecimal(0)) < 0) throw new IncorrectValueException("coolantCost");
 		this.coolantCost = coolantCost;
 	}
-	public Currency getPumpCost() {
+	public BigDecimal getPumpCost() {
 		return pumpCost;
 	}
-	public void setPumpCost(Currency pumpCost) {
+	public void setPumpCost(BigDecimal pumpCost) throws ArgumentCantBeNull, IncorrectValueException {
+		if (pumpCost == null) throw new ArgumentCantBeNull("pumpCost");
+		if (pumpCost.compareTo(new BigDecimal(0)) < 0) throw new IncorrectValueException("pumpCost");
 		this.pumpCost = pumpCost;
 	}
 	public Long getUid() {
 		return uid;
 	}
-	public void setUid(Long uid) {
-		this.uid = uid;
+	
+	public CalcProperties()
+	{
+		modulesInstallationCost = new BigDecimal(0);
+		baseTubeLength = new Float(0);
+		tubeCost = new BigDecimal(0);
+		coolantCost = new BigDecimal(0);
+		pumpCost = new BigDecimal(0);
 	}
 }

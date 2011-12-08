@@ -1,15 +1,18 @@
 package il.aircon.controller;
 
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import org.hibernate.Transaction;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
+import il.aircon.model.CalcProperties;
 import il.aircon.model.FieldIsUnchangeable;
 import il.aircon.model.HibernateUtil;
 import il.aircon.model.IncorrectOrderStateChange;
@@ -276,6 +279,107 @@ public final class OrdersManager
 		if (ords.size() == 1) return (Order)ords.get(0);
 		else
 			return null;
+	}
+	
+	public static CalcProperties GetCalcProperties()
+	{
+		SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
+		Session session = sessionFactory.openSession();
+		
+		Query query = session.createQuery("from CalcProperties");
+		List ords = query.list();
+		
+		session.close();
+		if (ords.size() == 1) return (CalcProperties)ords.get(0);
+		else
+			return null;
+	}
+	
+	public static void SetCalcProperties(
+			String modulesInstallationCost_s,
+			String baseTubeLength_s,
+			String tubeCost_s,
+			String coolantCost_s,
+			String pumpCost_s) throws IncorrectValueException, ArgumentCantBeNull, InvalidInputException
+	{
+		CalcProperties cpr;
+		
+		SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
+		Session session = sessionFactory.openSession();
+		Transaction ta = session.beginTransaction();
+		
+		Query query = session.createQuery("from CalcProperties");
+		List ords = query.list();
+		
+		if (ords.size() == 1) 
+			cpr = (CalcProperties)ords.get(0);
+		else
+			cpr = new CalcProperties();	
+		
+		
+		if (modulesInstallationCost_s == null) throw new ArgumentCantBeNull("modulesInstallationCost");
+		try
+		{
+			BigDecimal modulesInstallationCost = new BigDecimal(modulesInstallationCost_s);
+			cpr.setModulesInstallationCost(modulesInstallationCost);
+		}
+		catch (NumberFormatException ex)
+		{
+			throw new InvalidInputException("modulesInstallationCost");
+		}		
+
+		
+		if (baseTubeLength_s == null) throw new ArgumentCantBeNull("baseTubeLength");
+		try
+		{
+			float baseTubeLength = Float.parseFloat(baseTubeLength_s);
+			cpr.setBaseTubeLength(baseTubeLength);
+		}
+		catch (NumberFormatException ex)
+		{
+			throw new InvalidInputException("baseTubeLength");
+		}		
+
+		
+		if (tubeCost_s == null) throw new ArgumentCantBeNull("tubeCost");
+		try
+		{
+			BigDecimal tubeCost = new BigDecimal(tubeCost_s);
+			cpr.setTubeCost(tubeCost);
+		}
+		catch (NumberFormatException ex)
+		{
+			throw new InvalidInputException("tubeCost");
+		}		
+
+	
+		if (coolantCost_s == null) throw new ArgumentCantBeNull("coolantCost");
+		try
+		{
+			BigDecimal coolantCost = new BigDecimal(coolantCost_s);
+			cpr.setCoolantCost(coolantCost);
+		}
+		catch (NumberFormatException ex)
+		{
+			throw new InvalidInputException("coolantCost");
+		}	
+
+		
+		if (pumpCost_s == null) throw new ArgumentCantBeNull("pumpCost");
+		try
+		{
+			BigDecimal pumpCost = new BigDecimal(pumpCost_s);
+			cpr.setPumpCost(pumpCost);
+		}
+		catch (NumberFormatException ex)
+		{
+			throw new InvalidInputException("pumpCost");
+		}
+		
+		session.saveOrUpdate(cpr);
+		ta.commit();
+
+		session.close();
 	}
 
 }

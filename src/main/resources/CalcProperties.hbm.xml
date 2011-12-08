@@ -3,14 +3,14 @@
                                    "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 <hibernate-mapping package="il.aircon.model">
  <class name="CalcProperties" table="calc_properties">
-  <id column="uid" name="uid">
+  <id column="uid" name="uid" access="field">
    <generator class="native"/>
   </id>
-  <property generated="never" lazy="false" name="modulesInstallationCost" type="currency" access="field"/>
+  <property generated="never" lazy="false" name="modulesInstallationCost" type="big_decimal" access="field"/>
   <property generated="never" lazy="false" name="baseTubeLength" access="field"/>
-  <property generated="never" lazy="false" name="tubeCost" type="currency" access="field"/>
-  <property generated="never" lazy="false" name="coolantCost" type="currency" access="field"/>
-  <property generated="never" lazy="false" name="pumpCost" type="currency" access="field"/>
+  <property generated="never" lazy="false" name="tubeCost" type="big_decimal" access="field"/>
+  <property generated="never" lazy="false" name="coolantCost" type="big_decimal" access="field"/>
+  <property generated="never" lazy="false" name="pumpCost" type="big_decimal" access="field"/>
 
  </class>
 </hibernate-mapping>

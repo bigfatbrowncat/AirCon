@@ -203,7 +203,7 @@ public final class CreateOrder extends HttpServlet {
 		pw.printf("  .success { color: #008800; font-size: 200%%; }\n");
 		pw.printf("</style>\n");
 		pw.printf("</head><body>\n");
-		pw.printf("<p class=\"success\">Заказ принят успешно!</p>");
+		pw.printf("<p class=\"success\">Заказ принят.</p>");
 		pw.printf("</body>");
 		pw.printf("</html>");    	
 	}    

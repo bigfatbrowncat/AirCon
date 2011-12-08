@@ -19,7 +19,7 @@
   <property generated="never" lazy="false" name="pipeLineLength" access="field"/>
   <property generated="never" lazy="false" name="additionalCoolantAmount" access="field"/>
   <property generated="never" lazy="false" name="pumpNeeded" access="field"/>
-  <property generated="never" lazy="false" name="fullCost" type="currency" access="field"/>
+  <property generated="never" lazy="false" name="fullCost" type="big_decimal" access="field"/>
   <property generated="never" lazy="false" name="state" access="field">
    <type name="org.hibernate.type.EnumType">
     <param name="enumClass">il.aircon.model.Order$StateType</param>
