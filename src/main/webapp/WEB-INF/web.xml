@@ -5,10 +5,10 @@
 <web-app>
   <display-name>Archetype Created Web Application</display-name>
   <servlet>
-  	<servlet-name>CreateOrder</servlet-name>
-  	<display-name>CreateOrder</display-name>
+  	<servlet-name>EditOrder</servlet-name>
+  	<display-name>EditOrder</display-name>
   	<description></description>
-  	<servlet-class>il.aircon.view.CreateOrder</servlet-class>
+  	<servlet-class>il.aircon.view.EditOrder</servlet-class>
   </servlet>
   <servlet>
   	<servlet-name>ListOrders</servlet-name>
@@ -18,11 +18,15 @@
   </servlet>
 
   <servlet-mapping>
-  	<servlet-name>CreateOrder</servlet-name>
-  	<url-pattern>/CreateOrder</url-pattern>
+  	<servlet-name>EditOrder</servlet-name>
+  	<url-pattern>/edit</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
   	<servlet-name>ListOrders</servlet-name>
   	<url-pattern>/</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+  	<servlet-name>ListOrders</servlet-name>
+  	<url-pattern>/list</url-pattern>
   </servlet-mapping>
 </web-app>

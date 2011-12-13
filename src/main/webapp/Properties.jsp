@@ -12,13 +12,15 @@
 	<%!
 		private static String modulesInstallationCost_INCORRECT_MESSAGE = "Значение стоимости установки блоков должно быть положительным числом или нулём. "
 				+ "Допускаются десятичные дроби.";
-		private static String baseTubeLength_INCORRECT_MESSAGE = "Длина соединительной трубы, входящей в стоимость заказа, должна быть положительным числом или нулём."
+		private static String basePipeLength_INCORRECT_MESSAGE = "Длина соединительной трубы, входящей в стоимость заказа, должна быть положительным числом или нулём."
 				+ "Допускаются десятичные дроби.";
-		private static String tubeCost_INCORRECT_MESSAGE = "Значение погонной стоимости соединительной трубы должно быть положительным числом или нулём."
+		private static String pipeCost_INCORRECT_MESSAGE = "Значение погонной стоимости соединительной трубы должно быть положительным числом или нулём."
 				+ "Допускаются десятичные дроби.";
-		private static String coolantCost_INCORRECT_MESSAGE = "Значение цены охладителя должно быть положительным числом или нулём."
+		private static String coolantCost_INCORRECT_MESSAGE = "Значение стоимости охладителя должно быть положительным числом или нулём."
 				+ "Допускаются десятичные дроби.";
-		private static String pumpCost_INCORRECT_MESSAGE = "Значение цены помпы должно быть положительным числом или нулём."
+		private static String pumpCost_INCORRECT_MESSAGE = "Значение стоимости помпы должно быть положительным числом или нулём."
+				+ "Допускаются десятичные дроби.";
+		private static String pumpInstallationCost_INCORRECT_MESSAGE = "Значение стоимости установки помпы должно быть положительным числом или нулём."
 				+ "Допускаются десятичные дроби.";
 	%>
 	<%
@@ -28,10 +30,11 @@
 		String incorrect_input_message = null;
 		
 		boolean modulesInstallationCost_incorrect = false;
-		boolean baseTubeLength_incorrect = false;
-		boolean tubeCost_incorrect = false;
+		boolean basePipeLength_incorrect = false;
+		boolean pipeCost_incorrect = false;
 		boolean coolantCost_incorrect = false;
 		boolean pumpCost_incorrect = false;
+		boolean pumpInstallationCost_incorrect = false;
 		
 		boolean dont_edit = false;
 		
@@ -42,17 +45,17 @@
 			notPresent ++;
 		}
 
-		String baseTubeLength = request.getParameter("baseTubeLength");
-		if (baseTubeLength == null) 
+		String basePipeLength = request.getParameter("basePipeLength");
+		if (basePipeLength == null) 
 		{
-			baseTubeLength = "0";
+			basePipeLength = "0";
 			notPresent ++;
 		}
 
-		String tubeCost = request.getParameter("tubeCost");
-		if (tubeCost == null) 
+		String pipeCost = request.getParameter("pipeCost");
+		if (pipeCost == null) 
 		{
-			tubeCost = "0";
+			pipeCost = "0";
 			notPresent ++;
 		}
 
@@ -70,7 +73,14 @@
 			notPresent ++;
 		}
 
-		if (notPresent == 5)
+		String pumpInstallationCost = request.getParameter("pumpInstallationCost");
+		if (pumpInstallationCost == null)
+		{
+			pumpInstallationCost = "0";
+			notPresent ++;
+		}
+		
+		if (notPresent == 6)
 		{
 			// Ни одного параметра не передано
 			// В этом случае параметры просто загружаются из базы
@@ -78,10 +88,11 @@
 			if (cpr != null)
 			{
 				modulesInstallationCost = cpr.getModulesInstallationCost().toPlainString();
-				baseTubeLength = Float.toString(cpr.getBaseTubeLength());
-				tubeCost = cpr.getTubeCost().toPlainString();
+				basePipeLength = Float.toString(cpr.getBasePipeLength());
+				pipeCost = cpr.getPipeCost().toPlainString();
 				coolantCost = cpr.getCoolantCost().toPlainString();
 				pumpCost = cpr.getPumpCost().toPlainString();
+				pumpInstallationCost = cpr.getPumpInstallationCost().toPlainString();
 			}
 		}
 		else if (notPresent == 0)
@@ -89,7 +100,7 @@
 			// Все параметры указаны, записываем значения в базу
 			try
 			{
-				OrdersManager.SetCalcProperties(modulesInstallationCost, baseTubeLength, tubeCost, coolantCost, pumpCost);
+				OrdersManager.SetCalcProperties(modulesInstallationCost, basePipeLength, pipeCost, coolantCost, pumpCost, pumpInstallationCost);
 				dont_edit = true;
 			}
 			catch (InvalidInputException iie)
@@ -99,15 +110,15 @@
 					modulesInstallationCost_incorrect = true;
 					incorrect_input_message = modulesInstallationCost_INCORRECT_MESSAGE;
 				}
-				if (iie.getFieldName().equals("baseTubeLength")) 
+				if (iie.getFieldName().equals("basePipeLength")) 
 				{
-					baseTubeLength_incorrect = true;
-					incorrect_input_message = baseTubeLength_INCORRECT_MESSAGE;
+					basePipeLength_incorrect = true;
+					incorrect_input_message = basePipeLength_INCORRECT_MESSAGE;
 				}
-				if (iie.getFieldName().equals("tubeCost"))
+				if (iie.getFieldName().equals("pipeCost"))
 				{
-					tubeCost_incorrect = true;
-					incorrect_input_message = tubeCost_INCORRECT_MESSAGE;
+					pipeCost_incorrect = true;
+					incorrect_input_message = pipeCost_INCORRECT_MESSAGE;
 				}
 				if (iie.getFieldName().equals("coolantCost"))
 				{
@@ -119,21 +130,26 @@
 					pumpCost_incorrect = true;
 					incorrect_input_message = pumpCost_INCORRECT_MESSAGE;
 				}
+				if (iie.getFieldName().equals("pumpInstallationCost"))
+				{
+					pumpInstallationCost_incorrect = true;
+					incorrect_input_message = pumpInstallationCost_INCORRECT_MESSAGE;
+				}
 			} catch (IncorrectValueException ive) {
 				if (ive.getFieldName().equals("modulesInstallationCost")) 
 				{
 					modulesInstallationCost_incorrect = true;
 					incorrect_input_message = modulesInstallationCost_INCORRECT_MESSAGE;
 				}
-				if (ive.getFieldName().equals("baseTubeLength")) 
+				if (ive.getFieldName().equals("basePipeLength")) 
 				{
-					baseTubeLength_incorrect = true;
-					incorrect_input_message = baseTubeLength_INCORRECT_MESSAGE;
+					basePipeLength_incorrect = true;
+					incorrect_input_message = basePipeLength_INCORRECT_MESSAGE;
 				}
-				if (ive.getFieldName().equals("tubeCost"))
+				if (ive.getFieldName().equals("pipeCost"))
 				{
-					tubeCost_incorrect = true;
-					incorrect_input_message = tubeCost_INCORRECT_MESSAGE;
+					pipeCost_incorrect = true;
+					incorrect_input_message = pipeCost_INCORRECT_MESSAGE;
 				}
 				if (ive.getFieldName().equals("coolantCost"))
 				{
@@ -145,9 +161,13 @@
 					pumpCost_incorrect = true;
 					incorrect_input_message = pumpCost_INCORRECT_MESSAGE;
 				}				
+				if (ive.getFieldName().equals("pumpInstallationCost"))
+				{
+					pumpInstallationCost_incorrect = true;
+					incorrect_input_message = pumpInstallationCost_INCORRECT_MESSAGE;
+				}
 			}
 		}
-			
 	%>
 	<style>
 		input.incorrect { background: #ffaaaa }
@@ -177,20 +197,20 @@
 					<td style="width: 300pt">Длина магистрали, включенная в стоимость установки:</td>
 					<td><input 
 						style="width: 250pt" 
-						name="baseTubeLength" 
-						id="baseTubeLength" 
+						name="basePipeLength" 
+						id="basePipeLength" 
 						type="text" 
-						value="<%= baseTubeLength %>" />, <b>м</b>
+						value="<%= basePipeLength %>" />, <b>м</b>
 					</td>
 				</tr>
 				<tr>
 					<td style="width: 300pt">Стоимость прокладки магистрали:</td>
 					<td><input 
 						style="width: 250pt" 
-						name="tubeCost" 
-						id="tubeCost" 
+						name="pipeCost" 
+						id="pipeCost" 
 						type="text" 
-						value="<%= tubeCost %>" />, <b>руб/м</b></td>
+						value="<%= pipeCost %>" />, <b>руб/м</b></td>
 				</tr>
 				<tr>
 					<td style="width: 300pt">Стоимость хладагента:</td>
@@ -209,6 +229,15 @@
 						id="pumpCost" 
 						type="text" 
 						value="<%= pumpCost %>" />, <b>руб</b></td>
+				</tr>
+				<tr>
+					<td style="width: 300pt">Стоимость установки дренажной помпы:</td>
+					<td><input 
+						style="width: 250pt" 
+						name="pumpInstallationCost" 
+						id="pumpInstallationCost" 
+						type="text" 
+						value="<%= pumpInstallationCost %>" />, <b>руб</b></td>
 				</tr>
 			</table>
 			<input style="padding: 2px; margin: 2px; margin-top: 5px; "type="submit" value="Сохранить" />		

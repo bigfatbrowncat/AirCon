@@ -2,7 +2,6 @@ package il.aircon.view;
 
 import il.aircon.controller.OrdersManager;
 import il.aircon.model.Order;
-import il.aircon.model.Order.StateType;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -16,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Servlet implementation class ListOrders
  */
-@WebServlet(description = "Shows a table containing the current orders", urlPatterns = { "/" })
+@WebServlet(description = "Shows a table containing the current orders", urlPatterns = { "/", "/list/" })
 public class ListOrders extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
@@ -57,7 +56,7 @@ public class ListOrders extends HttpServlet {
 				  "<span class=\"box2\"><input type=\"checkbox\" name=\"searchInspected\" %5$s/>осмотренных</span>, " +
 				  "<span class=\"box2\"><input type=\"checkbox\" name=\"searchCompleted\" %6$s/>завершенных</span> и " +
 				  "<span class=\"box2\"><input type=\"checkbox\" name=\"searchCancelled\" %7$s/>отмененных</span> заказов. " +
-				  "<input style=\"padding: 2px; margin: 2px; margin-top: 5px; \"type=\"submit\" value=\"Найти\" />", 
+				  "<input style=\"padding: 2px; margin: 2px; margin-top: 5px; \"type=\"submit\" value=\"Найти\" />\n", 
 				  customerNameSearchRequest != null ? customerNameSearchRequest : "",
 				  productManufacturerAndModelSearchRequest != null ? productManufacturerAndModelSearchRequest : "",
 				  targetAddressSearchRequest != null ? targetAddressSearchRequest : "",
@@ -68,7 +67,11 @@ public class ListOrders extends HttpServlet {
 				  );
 		pw.printf("</div>\n");
 		pw.printf("</form>\n");
-		
+		pw.printf("<form action=\"edit\">\n");
+		pw.printf("Или вы можете просмотреть заказ по его " +
+				  "<span class=\"box2\"> идентификационному номеру: " +
+				  "<input name=\"id\" value=\"0\"/></span>" +
+				  "<input style=\"padding: 2px; margin: 2px; margin-top: 5px; \"type=\"submit\" value=\"Открыть\" />\n");
 		
 		Order[] orders = OrdersManager.SearchOrder(customerNameSearchRequest,
 	    		productManufacturerAndModelSearchRequest,

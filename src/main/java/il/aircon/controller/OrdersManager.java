@@ -2,6 +2,7 @@ package il.aircon.controller;
 
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -155,10 +156,31 @@ public final class OrdersManager
 	/**
 	 * Функция вычислсет и вписывает полную стоимость выполнения заказа
 	 * @param order Заказ
+	 * @throws ArgumentCantBeNull 
+	 * @throws FieldIsUnchangeable 
+	 * @throws IncorrectValueException 
 	 */
-	private static void calculateFullCost(Order order) {
-		// TODO Auto-generated method stub
+	private static void calculateFullCost(Order order) throws IncorrectValueException, FieldIsUnchangeable, ArgumentCantBeNull {
+		SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
+		Session session = sessionFactory.openSession();
+		CalcProperties cprop = GetCalcProperties(session);
+
+		BigDecimal S, Sunits, Spipe, Cpipe, Spump, Srefrig, Crefrig;
+		double Plength, Rmass;
 		
+		Sunits = cprop.getModulesInstallationCost();
+		Cpipe = cprop.getPipeCost();
+		Crefrig = cprop.getCoolantCost();
+		
+		Plength = order.getPipeLineLength() - cprop.getBasePipeLength();
+		Spipe = Cpipe.multiply(new BigDecimal(Plength));
+		Spump = cprop.getPumpCost().add(cprop.getPumpInstallationCost());
+		Rmass = order.getAdditionalCoolantAmount();
+		Srefrig = Crefrig.multiply(new BigDecimal(Rmass));
+		
+		S = Sunits.add(Spipe).add(Spump).add(Srefrig);
+		
+		order.setFullCost(S);
 	}
 	
 	/**
@@ -229,7 +251,7 @@ public final class OrdersManager
 	}
 
 	/**
-	 * Изменсет состояние и/или свойства заказа
+	 * Изменяет состояние и/или свойства заказа
 	 * @param productManufacturerAndModel саименование производителс и модели устанавливаемого прибора
 	 * @param customerName саименование заказчика
 	 * @param targetAddress сдрес, по которому предполагаетсс произвести монтаж
@@ -285,11 +307,15 @@ public final class OrdersManager
 	{
 		SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
 		Session session = sessionFactory.openSession();
-		
+		CalcProperties res = GetCalcProperties(session);
+		session.close();
+		return res;
+	}
+	
+	private static CalcProperties GetCalcProperties(Session session)
+	{
 		Query query = session.createQuery("from CalcProperties");
 		List ords = query.list();
-		
-		session.close();
 		if (ords.size() == 1) return (CalcProperties)ords.get(0);
 		else
 			return null;
@@ -297,10 +323,11 @@ public final class OrdersManager
 	
 	public static void SetCalcProperties(
 			String modulesInstallationCost_s,
-			String baseTubeLength_s,
-			String tubeCost_s,
+			String basePipeLength_s,
+			String pipeCost_s,
 			String coolantCost_s,
-			String pumpCost_s) throws IncorrectValueException, ArgumentCantBeNull, InvalidInputException
+			String pumpCost_s,
+			String pumpInstallationCost_s) throws IncorrectValueException, ArgumentCantBeNull, InvalidInputException
 	{
 		CalcProperties cpr;
 		
@@ -329,27 +356,27 @@ public final class OrdersManager
 		}		
 
 		
-		if (baseTubeLength_s == null) throw new ArgumentCantBeNull("baseTubeLength");
+		if (basePipeLength_s == null) throw new ArgumentCantBeNull("basePipeLength");
 		try
 		{
-			float baseTubeLength = Float.parseFloat(baseTubeLength_s);
-			cpr.setBaseTubeLength(baseTubeLength);
+			float basePipeLength = Float.parseFloat(basePipeLength_s);
+			cpr.setBasePipeLength(basePipeLength);
 		}
 		catch (NumberFormatException ex)
 		{
-			throw new InvalidInputException("baseTubeLength");
+			throw new InvalidInputException("basePipeLength");
 		}		
 
 		
-		if (tubeCost_s == null) throw new ArgumentCantBeNull("tubeCost");
+		if (pipeCost_s == null) throw new ArgumentCantBeNull("pipeCost");
 		try
 		{
-			BigDecimal tubeCost = new BigDecimal(tubeCost_s);
-			cpr.setTubeCost(tubeCost);
+			BigDecimal pipeCost = new BigDecimal(pipeCost_s);
+			cpr.setPipeCost(pipeCost);
 		}
 		catch (NumberFormatException ex)
 		{
-			throw new InvalidInputException("tubeCost");
+			throw new InvalidInputException("pipeCost");
 		}		
 
 	
@@ -374,6 +401,17 @@ public final class OrdersManager
 		catch (NumberFormatException ex)
 		{
 			throw new InvalidInputException("pumpCost");
+		}
+
+		if (pumpInstallationCost_s == null) throw new ArgumentCantBeNull("pumpInstallationCost");
+		try
+		{
+			BigDecimal pumpInstallationCost = new BigDecimal(pumpInstallationCost_s);
+			cpr.setPumpInstallationCost(pumpInstallationCost);
+		}
+		catch (NumberFormatException ex)
+		{
+			throw new InvalidInputException("pumpInstallationCost");
 		}
 		
 		session.saveOrUpdate(cpr);

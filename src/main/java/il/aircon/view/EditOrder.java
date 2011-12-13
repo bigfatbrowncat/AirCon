@@ -28,8 +28,8 @@ import org.hibernate.SessionFactory;
 /**
  * Servlet implementation class CreateOrder
  */
-@WebServlet(description = "User form for creating of the new order", urlPatterns = { "/CreateOrder" })
-public final class CreateOrder extends HttpServlet {
+@WebServlet(description = "User form for creating or editing order", urlPatterns = { "/edit/" })
+public final class EditOrder extends HttpServlet {
 	private static final long serialVersionUID = 1L;
       
 	private static String pipeLineLength_INCORRECT_MESSAGE = "Значение длины трубопроводной магистрали между внутренним и внешним блоками должно быть положительным числом. "
@@ -40,7 +40,7 @@ public final class CreateOrder extends HttpServlet {
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public CreateOrder() {
+    public EditOrder() {
         super();
     }
 
@@ -54,11 +54,12 @@ public final class CreateOrder extends HttpServlet {
     		String pipeLineLength,
     		String additionalCoolantAmount,
     		Boolean pumpNeeded,
+    		String fullCost,
     		
     		boolean pipeLineLength_incorrect,
     		boolean additionalCoolantAmount_incorrect,
     		
-    		String incorrect_input_message) throws UnsupportedOrderState
+    		String message) throws UnsupportedOrderState
     {
     	boolean newOrder = id == -1;
     	
@@ -69,7 +70,7 @@ public final class CreateOrder extends HttpServlet {
 		}
 		else
 		{
-			pw.printf("<title>Правка заказа</title>\n");
+			pw.printf("<title>Редактирование заказа</title>\n");
 		}
 
 		pw.printf("<script language=\"javascript\">\n");
@@ -82,6 +83,7 @@ public final class CreateOrder extends HttpServlet {
 		pw.printf("  document.getElementById(\"pipeLineLength_row\").style.visibility = ((selstate.value != \"new\") ? \"visible\" : \"hidden\");\n");
 		pw.printf("  document.getElementById(\"additionalCoolantAmount_row\").style.visibility = ((selstate.value != \"new\") ? \"visible\" : \"hidden\");\n");
 		pw.printf("  document.getElementById(\"pumpNeeded_row\").style.visibility = ((selstate.value != \"new\") ? \"visible\" : \"hidden\");\n");
+		pw.printf("  document.getElementById(\"fullCost_row\").style.visibility = ((selstate.value != \"new\") ? \"visible\" : \"hidden\");\n");
 
 		pw.printf("  document.getElementById(\"productManufacturerAndModel\").disabled = editing_disabled;\n");
 		pw.printf("  document.getElementById(\"customerName\").disabled = editing_disabled;\n");
@@ -179,11 +181,19 @@ public final class CreateOrder extends HttpServlet {
 		pw.printf("<tr id=\"pumpNeeded_row\" style=\"visibility: hidden\">\n");
 		pw.printf("<td>Необходима установка дренажной помпы:</td><td><input style=\"width: 250pt\" name=\"pumpNeeded\" id=\"pumpNeeded\" type=\"checkbox\" %1$s></td>", ((pumpNeeded != null && pumpNeeded) ? "checked" : ""));
 		pw.printf("</tr>\n");
+
+		pw.printf("<tr id=\"fullCost_row\" style=\"visibility: hidden\">\n");
+		pw.printf("<td>Общая стоимость:</td> <td><input readonly style=\"width: 250pt\" name=\"fullCost\" id=\"fullCost\" type=\"text\" value=\"%1$s\" />, <b>кг</b></td>", 
+				fullCost);
+		pw.printf("</tr>\n");
+
+		pw.printf("</tr>\n");
+		
 		pw.printf("</table>\n");
 
-		if (incorrect_input_message != null && !incorrect_input_message.equals(""))
+		if (message != null && !message.equals(""))
 		{
-			pw.printf("<p class=\"incorrect_input_msg\"><b>Неверный ввод: </b>%1$s</p>\n", incorrect_input_message);		
+			pw.printf("<p class=\"incorrect_input_msg\"><b>%1$s</b></p>\n", message);		
 		}
 		
 		pw.println("<input style=\"padding: 2px; margin: 2px; margin-top: 5px; \"type=\"submit\" value=\"Принять заказ\" />");		
@@ -198,7 +208,7 @@ public final class CreateOrder extends HttpServlet {
     
 	private void printSuccess(PrintWriter pw) {
 		pw.printf("<html><head>");
-		pw.printf("<title>Создание заказа</title>\n");
+		pw.printf("<title>Редактирование заказа</title>\n");
 		pw.printf("<style>\n");
 		pw.printf("  .success { color: #008800; font-size: 200%%; }\n");
 		pw.printf("</style>\n");
@@ -208,6 +218,18 @@ public final class CreateOrder extends HttpServlet {
 		pw.printf("</html>");    	
 	}    
 
+	private void printNotFound(PrintWriter pw) {
+		pw.printf("<html><head>");
+		pw.printf("<title>Создание заказа</title>\n");
+		pw.printf("<style>\n");
+		pw.printf("  .notfound { color: #880000; font-size: 200%%; }\n");
+		pw.printf("</style>\n");
+		pw.printf("</head><body>\n");
+		pw.printf("<p class=\"notfound\">Заказ не найден.</p>");
+		pw.printf("</body>");
+		pw.printf("</html>");    	
+	}    
+	
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
@@ -239,11 +261,15 @@ public final class CreateOrder extends HttpServlet {
 			// Форма создания нового заказа
 			try {
 				printForm(pw, id, StateType.STATE_NEW, 
-						"", "", "", "0", "0", true, false, false, null);
+						"", "", "", "0", "0", true, "0", false, false, null);
 			} catch (UnsupportedOrderState e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+		else if (got == null)
+		{
+			printNotFound(pw);
 		}
 		else
 		{
@@ -257,7 +283,9 @@ public final class CreateOrder extends HttpServlet {
 						got.getTargetAddress(), 
 						got.getPipeLineLength() != null ? got.getPipeLineLength().toString() : null,
 						got.getAdditionalCoolantAmount() != null ? got.getAdditionalCoolantAmount().toString() : null, 
-						got.getPumpNeeded(), false, false, null);
+						got.getPumpNeeded(), 
+						got.getFullCost().toString(),
+						false, false, null);
 			} catch (UnsupportedOrderState e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -273,7 +301,7 @@ public final class CreateOrder extends HttpServlet {
 		resp.setContentType("text/html; charset=UTF-8");
 		resp.setCharacterEncoding("UTF-8");
 		
-		String incorrect_input_message = null;
+		String message = null;
 		
 		int id = -1;
 		if (req.getParameter("id") != null && req.getParameter("id") != "")
@@ -321,6 +349,7 @@ public final class CreateOrder extends HttpServlet {
 			String pipeLineLength = req.getParameter("pipeLineLength");
 			String additionalCoolantAmount = req.getParameter("additionalCoolantAmount");
 			Boolean pumpNeeded = (req.getParameter("pumpNeeded") != null && req.getParameter("pumpNeeded").equals("on"));
+			String fullCost = req.getParameter("fullCost");
 			
 			PrintWriter pw = resp.getWriter();
 			boolean pipeLineLength_incorrect = false, additionalCoolantAmount_incorrect = false;
@@ -370,23 +399,23 @@ public final class CreateOrder extends HttpServlet {
 				if (iie.getFieldName().equals("pipeLineLength")) 
 				{
 					pipeLineLength_incorrect = true;
-					incorrect_input_message = pipeLineLength_INCORRECT_MESSAGE;
+					message = pipeLineLength_INCORRECT_MESSAGE;
 				}
 				if (iie.getFieldName().equals("additionalCoolantAmount")) 
 				{
 					additionalCoolantAmount_incorrect = true;
-					incorrect_input_message = additionalCoolantAmount_INCORRECT_MESSAGE;
+					message = additionalCoolantAmount_INCORRECT_MESSAGE;
 				}
 			} catch (IncorrectValueException ive) {
 				if (ive.getFieldName().equals("pipeLineLength"))
 				{
 					pipeLineLength_incorrect = true;
-					incorrect_input_message = pipeLineLength_INCORRECT_MESSAGE;
+					message = pipeLineLength_INCORRECT_MESSAGE;
 				}
 				if (ive.getFieldName().equals("additionalCoolantAmount"))
 				{
 					additionalCoolantAmount_incorrect = true;
-					incorrect_input_message = additionalCoolantAmount_INCORRECT_MESSAGE;
+					message = additionalCoolantAmount_INCORRECT_MESSAGE;
 				}
 			} catch (ArgumentCantBeNull e) {
 				// TODO Auto-generated catch block
@@ -399,15 +428,14 @@ public final class CreateOrder extends HttpServlet {
 				e.printStackTrace();
 			} 
 			
-			if (incorrect_input_message != null)
+			if (message == null)
 			{
-				printForm(pw, id, stateType, productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded, 
-						pipeLineLength_incorrect, additionalCoolantAmount_incorrect, incorrect_input_message);
+				message = "Заказ принят!";
 			}
-			else
-			{
-				printSuccess(pw);
-			}
+
+			if (got != null) fullCost = got.getFullCost().toPlainString();
+			printForm(pw, id, stateType, productManufacturerAndModel, customerName, targetAddress, pipeLineLength, additionalCoolantAmount, pumpNeeded, 
+					fullCost, pipeLineLength_incorrect, additionalCoolantAmount_incorrect, message);
 		
 		} catch (UnsupportedOrderState e) {
 			// TODO Auto-generated catch block
